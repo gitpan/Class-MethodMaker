@@ -8,9 +8,14 @@
 
 # -------------------------------------
 
-=head2 hash
+=head1 NAME
 
-Create methods for handling a hash value.
+Class::Method::hash - Create methods for handling a hash value.
+
+=head1 SYNOPSIS
+
+  use Class::MethodMaker
+    [ hash => [qw/ x /] ];
 
   $instance->x;                 # empty
   $instance->x(a => 1, b => 2, c => 3);
@@ -20,6 +25,13 @@ Create methods for handling a hash value.
   $instance->x_index('b') == 5; # true
   $instance->x_exists('c');     # false
   $instance->x_exists('d');     # true
+
+=head1 DESCRIPTION
+
+Creates methods to handle hash values in an object.  For a component named
+C<x>, by default creates methods C<x>, C<x_reset>, C<x_clear>, C<x_isset>,
+C<x_count>, C<x_index>, C<x_keys>, C<x_values>, C<x_each>, C<x_exists>,
+C<x_delete>, C<x_set>, C<x_get>.
 
 =cut
 
@@ -118,8 +130,7 @@ sub hash {
 
 =pod
 
-
-Default methods created are:
+Methods available are:
 
 =cut
 
@@ -127,15 +138,15 @@ Default methods created are:
 
 =head3 C<*>
 
-This method returns the list of keys and values stored in the slot (they are
-returned pairwise, i.e., key, value, key, value; as with perl hashes, no order
-of keys is guaranteed).  If any arguments are provided to this method, they
-B<replace> the current hash contents.  In an array context it returns the
-keys, values as an array and in a scalar context as a hash-reference.  Note
-that this reference is no longer a direct reference to the storage, in
-contrast to Class::MethodMaker v1.  This is to protect encapsulation.  See
-x_ref if you need that functionality (and are prepared to take the associated
-risk.)
+I<Created by default>.  This method returns the list of keys and values stored
+in the slot (they are returned pairwise, i.e., key, value, key, value; as with
+perl hashes, no order of keys is guaranteed).  If any arguments are provided
+to this method, they B<replace> the current hash contents.  In an array
+context it returns the keys, values as an array and in a scalar context as a
+hash-reference.  Note that this reference is no longer a direct reference to
+the storage, in contrast to Class::MethodMaker v1.  This is to protect
+encapsulation.  See x_ref if you need that functionality (and are prepared to
+take the associated risk.)
 
 If a single argument is provided that is an arrayref or hashref, it is
 expanded and its contents used in place of the existing contents.  This is a
@@ -247,13 +258,14 @@ more efficient passing mechanism for large numbers of values.
 
 =head3 C<*_reset>
 
-Called without an argument, this resets the component as a whole; deleting any
-associated storage, and returning the component to its default state.
-Normally, this means that I<*_isset> will return false, and I<*> will return
-undef.  If C<-default> is in effect, then the component will be set to the
-default value, and I<*_isset> will return true.  If C<-default_ctor> is in
-effect, then the default subr will be invoked, and its return value used to
-set the value of the component, and I<*_isset> will return true.
+I<Created by default>.  Called without an argument, this resets the component
+as a whole; deleting any associated storage, and returning the component to
+its default state.  Normally, this means that I<*_isset> will return false,
+and I<*> will return undef.  If C<-default> is in effect, then the component
+will be set to the default value, and I<*_isset> will return true.  If
+C<-default_ctor> is in effect, then the default subr will be invoked, and its
+return value used to set the value of the component, and I<*_isset> will
+return true.
 
 If called with arguments, these arguments are treated as indexes into the
 component, and the individual elements thus referenced are reset (their
@@ -280,7 +292,8 @@ are not set).
 
 =head3 C<*_clear>
 
-Empty the component of all elements, but without deleting the storage itself.
+I<Created by default>.  Empty the component of all elements, but without
+deleting the storage itself.
 
 If given a list of keys, then the elements I<that exist> indexed by those keys
 are set to undef (but not deleted).
@@ -307,10 +320,11 @@ element C<b> from component 'a' (so C<< $x->a_isset('b')) >> returns false).
 
 =head3 C<*_isset>
 
-Whether the component is currently set.  This is different from being defined;
-initially, the component is not set (and if read, will return undef); it can be
-set to undef (which is a set value, which also returns undef).  Having been
-set, the only way to unset the component is with C<*_reset>.
+I<Created by default>.  Whether the component is currently set.  This is
+different from being defined; initially, the component is not set (and if
+read, will return undef); it can be set to undef (which is a set value, which
+also returns undef).  Having been set, the only way to unset the component is
+with C<*_reset>.
 
 If a default value is in effect, then C<*_isset> will always return true.
 
@@ -342,9 +356,10 @@ and returns the logical conjunction (I<and>) of the tests.
 
 =head3 C<*_count>
 
-Returns the number of elements in this component.  This is not affected by
-presence (or lack) of a C<default> (or C<default_ctor>).  Returns C<undef> if
-whole component not set (as per I<*_isset>).
+I<Created by default>.  Returns the number of elements in this component.
+This is not affected by presence (or lack) of a C<default> (or
+C<default_ctor>).  Returns C<undef> if whole component not set (as per
+I<*_isset>).
 
 =cut
 
@@ -361,7 +376,8 @@ whole component not set (as per I<*_isset>).
 
 =head3 C<*_index>
 
-Takes a list of indices, returns a list of the corresponding values.
+I<Created by default>.  Takes a list of indices, returns a list of the
+corresponding values.
 
 If a default (or a default ctor) is in force, then a lookup by
 index will vivify & set to the default the respective elements (and
@@ -388,7 +404,8 @@ therefore the aggregate data-structure also, if it's not already).
 
 =head3 C<*_keys>
 
-The known keys, as a list in list context, as an arrayref in scalar context.
+I<Created by default>.  The known keys, as a list in list context, as an
+arrayref in scalar context.
 
 If you're expecting a count of the keys in scalar context, see I<*_count>.
 
@@ -405,7 +422,8 @@ If you're expecting a count of the keys in scalar context, see I<*_count>.
 
 =head3 C<*_values>
 
-The known values, as a list in list context, as an arrayref in scalar context.
+I<Created by default>.  The known values, as a list in list context, as an
+arrayref in scalar context.
 
 =cut
 
@@ -421,7 +439,7 @@ The known values, as a list in list context, as an arrayref in scalar context.
 
 =head3 C<*_each>
 
-The next pair of key, value (as a list) from the hash.
+I<Created by default>.  The next pair of key, value (as a list) from the hash.
 
 =cut
 
@@ -434,8 +452,9 @@ The next pair of key, value (as a list) from the hash.
 
 =head3 C<*_exists>
 
-Takes any number of arguments, considers each as a key, and determines whether
-the key exists in the has.  Returns the logical conjunction (I<and>).
+I<Created by default>.  Takes any number of arguments, considers each as a
+key, and determines whether the key exists in the has.  Returns the logical
+conjunction (I<and>).
 
 =cut
 
@@ -450,10 +469,10 @@ the key exists in the has.  Returns the logical conjunction (I<and>).
 
 =head3 C<*_delete>
 
-This operates exactly like I<*_reset>, except that calling this with no args
-does nothing.  This is provided for orthogonality with the Perl C<delete>
-operator, while I<*_reset> is provided for orthogonality with other component
-types.
+I<Created by default>.  This operates exactly like I<*_reset>, except that
+calling this with no args does nothing.  This is provided for orthogonality
+with the Perl C<delete> operator, while I<*_reset> is provided for
+orthogonality with other component types.
 
 =cut
            '*_delete' =>
@@ -474,8 +493,8 @@ types.
   $h->h_set(b=>4,d=>7);
   %n = $h->a; # (a=>1,b=>4,c=>3,d=>7) (in some order)
 
-Takes a list, treated as pairs of index => value; each given index is set to
-the corresponding value.  No return.
+I<Created by default>.  Takes a list, treated as pairs of index => value; each
+given index is set to the corresponding value.  No return.
 
 If two arguments are given, of which the first is an arrayref, then it is
 treated as a list of indices of which the second argument (which must also be
@@ -510,8 +529,8 @@ are equivalent:
 
 =head3 C<*_get>
 
-Retrieves the value of the component without setting (ignores any arguments
-passed).
+I<Created by default>.  Retrieves the value of the component without setting
+(ignores any arguments passed).
 
 =cut
 

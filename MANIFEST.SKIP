@@ -10,8 +10,11 @@
 ^testcheck$
 ^.*/\.cvsignore$
 ^lib/Class/MethodMaker/(?:array|hash|scalar)\.pm$
+^lib/Class/MethodMaker/\.\#.*$
+^lib/Class/MethodMaker/Engine\.(?:bs|o|c)$
 ^html(?:/.*)?$
 ^(.*/)?.cvsignore$
 ^INFO.yaml$
 ^_build/
+^misc/
 ^*~$

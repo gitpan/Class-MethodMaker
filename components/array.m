@@ -8,15 +8,27 @@
 
 # -------------------------------------
 
-=head1 array
+=head1 NAME
 
-Create methods for handling an array value.
+Class::Method::array - Create methods for handling an array value.
+
+=head1 SYNOPSIS
+
+  use Class::MethodMaker
+    [ array => [qw/ x /] ];
 
   $instance->x;                # empty
   $instance->x(1, 1, 2, 3, 5, 8);
   $instance->x_count == 6;     # true
   $instance->x = (13, 21, 34);
   $instance->x_index(1) == 21; # true
+
+=head1 DESCRIPTION
+
+Creates methods to handle array values in an object.  For a component named
+C<x>, by default creates methods C<x>, C<x_reset>, C<x_clear>, C<x_isset>,
+C<x_count>, C<x_index>, C<x_push>, C<x_pop>, C<x_unshift>, C<x_shift>,
+C<x_splice>.
 
 =cut
 

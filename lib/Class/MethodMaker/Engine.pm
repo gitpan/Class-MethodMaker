@@ -58,8 +58,14 @@ BEGIN {
 
 # -------------------------------------
 
-our $PACKAGE = 'Class-MethodMaker';
-our $VERSION = '2.02';
+our $VERSION;
+BEGIN {
+  our $PACKAGE = 'Class-MethodMaker';
+  our $VERSION = '2.03';
+}
+
+use XSLoader qw();
+XSLoader::load 'Class::MethodMaker::Engine', $VERSION;
 
 # -------------------------------------
 # CLASS CONSTRUCTION
@@ -774,7 +780,12 @@ sub install_methods {
     if ( $reftype eq 'CODE' ) {
       my $methname = join '::', $target, $name;
       no strict 'refs';
-      *{$methname} = $code unless defined *{$methname}{CODE};
+      if ( ! defined *{$methname}{CODE} ) {
+        *{$methname} = $code;
+        # Generate a unique stash name for the sub.  Use a preceding space
+        # to avoid collisions with anything in the Perl space.
+        set_sub_name($code, $target, $name, " ${target}::${name}");
+      }
     } else {
       croak "What do you expect me to do with this?: $code\n";
     }
@@ -1125,3 +1136,9 @@ sub _boolean {
            },
           };
 }
+
+=head1 AUTHOR
+
+Martyn J. Pearce <fluffy@cpan.org>
+
+=cut

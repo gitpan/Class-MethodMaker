@@ -1,5 +1,10 @@
 Revision History for Class::MethodMaker (versions 2)
 
+2.03	Oct  9  6:12 PM GMT 2004
+	- Use Module::Build rather than ExtUtils::MakeMaker
+	- Add XS code to set created sub names in profiler, etc.
+	- Documentation tweaks
+
 2.02	Apr  9 11:02 AM GMT 2004
 	- Fix redefine warnings (with V1Compat) under perl-5.8.3
 

@@ -8,9 +8,11 @@
 
 # -------------------------------------
 
-=head2 scalar
+=head1 NAME
 
-Create methods for handling a scalar value.
+Class::Method::scalar - Create methods for handling a scalar value.
+
+=head1 SYNOPSIS
 
   package MyClass;
   use Class::MethodMaker
@@ -35,6 +37,11 @@ Create methods for handling a scalar value.
   $a = $m->a(5);     # 5;
   $m->a_reset;
   $x = $m->a_isset; # false
+
+=head1 DESCRIPTION
+
+Creates methods to handle array values in an object.  For a component named
+C<x>, by default creates methods C<x>, C<x_reset>, C<x_isset>, C<x_clear>.
 
 =cut
 

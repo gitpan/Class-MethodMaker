@@ -1,5 +1,4 @@
 MANIFEST.SKIP
-Makefile.PL
 Changes
 MANIFEST
 configure
@@ -56,7 +55,13 @@ t/v1_key_attrib.t
 t/v1_key_with_create.t
 t/v1_singleton.t
 t/diffclass.t
-SIGNATURE
 INSTALL
 t/v1_boolean.t
 t/redefine-warnings.t
+Build.PL
+generate.PL
+META.yml
+Generate.pm
+lib/Class/MethodMaker/Engine.xs
+
+SIGNATURE    Added here by Module::Build
