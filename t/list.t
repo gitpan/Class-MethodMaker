@@ -15,7 +15,7 @@ my $o = new X;
 # 1--6
 TEST { 1 };
 TEST { ! scalar @{$o->a} };
-TEST { $o->push_a(123, 456) };
+TEST { $o->a(123, 456) };
 TEST { $o->unshift_a('baz') };
 TEST { $o->pop_a == 456 };
 TEST { $o->shift_a eq 'baz' };

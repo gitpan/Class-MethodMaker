@@ -1,5 +1,9 @@
 Revision history for Class-MethodMaker.
 
+1.08  Mon Oct 14  5:33PM GMT 2002
+	- Enable setting of list with $o->x(...) so hash_init is useful
+	  for lists
+
 1.07  Tue Oct  1  7:04AM GMT 2002
 	- make make.pm 5.005_03 friendly (patches courtesy of Ed Avis, 
 	  <ed@membled.com>)

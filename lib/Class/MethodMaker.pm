@@ -62,7 +62,7 @@ use vars qw( @ISA );
 use Carp qw( carp cluck croak );
 
 use vars qw( $VERSION $PACKAGE );
-$VERSION = '1.07';
+$VERSION = '1.08';
 $PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------
@@ -1634,9 +1634,10 @@ argument and for each string, x, creates the methods:
 
 =item   x
 
-This method returns the list of values stored in the slot. In an array
-context it returns them as an array and in a scalar context as a
-reference to the array.
+This method returns the list of values stored in the slot. In an array context
+it returns them as an array and in a scalar context as a reference to the
+array.  If any arguments are provided to this method, they I<replace> the
+current list contents.
 
 =item   x_push
 
@@ -1683,15 +1684,8 @@ sub list {
         # change (likely to replace, rather than push onto, the list).
         #
 
-        # XXX Deprecated 25.v.00 ---------
-
-        # This code is deprecated.  Use at your peril.  It is not
-        # supported, and will disappear at or after 25.v.01
-
-        # XXX Removed 1.x.02 ------------
-        # push @{$self->{$field}}, map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list;
-
-        # XXX Deprecated 25.v.00 ---------
+        $self->{$field} = [ map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list ]
+          if @list;
 
         return wantarray ? @{$self->{$field}} : $self->{$field};
       };
@@ -1712,6 +1706,8 @@ sub list {
 }
 
 # -------------------------------------
+
+#DOCUMENT
 
 sub static_list {
   my ($class, @args) = @_;
