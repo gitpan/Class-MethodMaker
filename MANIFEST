@@ -63,5 +63,6 @@ generate.PL
 META.yml
 Generate.pm
 lib/Class/MethodMaker/Engine.xs
+Makefile.PL
 
 SIGNATURE    Added here by Module::Build

@@ -98,7 +98,7 @@ sub scalar {
       croak("default_ctor must be a valid identifier (or a code ref): $meth ",
             "(attribute $name)\n")
         unless $meth =~ /^[A-Za-z_][A-Za-z0-9_]*/;
-      $dctor = sub { $type->$meth };
+      $dctor = sub { $type->$meth(@_) };
     } else {
       $dctor = $options->{default_ctor};
       croak("Argument to default_ctor must be a simple value or a code ref ",

@@ -24,7 +24,7 @@ use test qw( DATA_DIR
 
 BEGIN {
   # 1 for compilation test,
-  plan tests  => 301,
+  plan tests  => 314,
        todo   => [],
 }
 
@@ -284,6 +284,7 @@ TEST_36: {
   my $count;
   sub new {
     my $class = shift;
+    my $i = shift;
     my $self = @_ ? $_[0] : ++$count;
     return bless \$self, $class;
   }
@@ -304,7 +305,7 @@ TEST_36: {
                                                   { -type => 'Y',
                                                     -default_ctor =>
                                                       sub {
-                                                        Y->new(-3);
+                                                        Y->new(undef, -3);
                                                       },
                                                   },
                                                   qw( df3 ),
@@ -896,6 +897,64 @@ no 'new' (if the ctor is called anyway, the program barfs).
   ok(evcheck(sub { $n = $x->nic; }, 'non-init ctor( 6)'), 1,
                                                          'non-init ctor ( 6)');
   ok ref $n, 'Y',                                        'non-init ctor ( 7)';
+}
+
+# -------------------------------------
+
+=head2 Tests 302--314 default_ctor (arg)
+
+=cut
+
+TEST_302:
+
+{
+  package S;
+  my $count;
+  sub new {
+    my ($class, $arg) = @_;
+
+    die sprintf "Expected an X, got a '%s'\n", defined($arg) ? ref $arg : '*undef*'
+      unless UNIVERSAL::isa($arg, 'X');
+    my $self = $arg->int;
+    return bless \$self, $class;
+  }
+
+  sub value {
+    return ${$_[0]};
+  }
+}
+
+{
+  my $n;
+  ok(evcheck(sub { package X;
+                   Class::MethodMaker->import([scalar =>
+                                                 [{ -type => 'S',
+                                                    -default_ctor => 'new',
+                                                  },
+                                                  qw( dfx ),
+                                                 ],
+                                               ]);
+                 }, 'default_ctor (arg)( 1)'), 1,   'default_ctor (arg) ( 1)');
+  ok(evcheck(sub { $x->int(1) }, 'default_ctor (arg)( 2)'), 1,
+                                                    'default_ctor (arg) ( 2)');
+  ok(evcheck(sub { $n = $x->dfx_isset; }, 'default_ctor (arg)( 3)'), 1,
+                                                    'default_ctor (arg) ( 3)');
+  ok $n;                                           # default_ctor (arg) ( 4)
+  ok(evcheck(sub { $n = $x->dfx->value; }, 'default_ctor (arg)( 5)'), 1,
+                                                    'default_ctor (arg) ( 5)');
+  ok $n, 1,                                         'default_ctor (arg) ( 6)';
+
+  ok 1, 1, sprintf 'default_ctor (-%2d)', $_
+    for 7..8;
+
+  ok(evcheck(sub { $x->dfx_reset; },'default_ctor (arg)( 9)'), 1,
+                                                    'default_ctor (arg) ( 9)');
+  ok(evcheck(sub { $n = $x->dfx_isset; }, 'default_ctor (arg)(10)'), 1,
+                                                    'default_ctor (arg) (10)');
+  ok $n;                                           # default_ctor (arg) (11)
+  ok(evcheck(sub { $n = $x->dfx->value; }, 'default_ctor (arg)(12)'), 1,
+                                                    'default_ctor (arg) (12)');
+  ok $n, 1,                                         'default_ctor (arg) (13)';
 }
 
 # ----------------------------------------------------------------------------

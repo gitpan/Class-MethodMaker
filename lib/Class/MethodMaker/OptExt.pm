@@ -169,7 +169,7 @@ END
                          default_ctor => { encode => 8,
                                            defchk => <<'END',
 if ( ! exists %%STORAGE%% ) {
-  my $default = $dctor->();
+  my $default = $dctor->($_[0]);
   %%ASGNCHK__SIGIL__($default)%%
   %%STORAGE%% = $default
 }

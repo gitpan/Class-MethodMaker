@@ -14,41 +14,42 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 9db757be8c782d3177ddbb1df878b647b72ec0f9 Build.PL
-SHA1 55ebb5ebe99dc4e44294005cd5c36579e9467939 Changes
+SHA1 939d466194006202429432567816fac24a309f7b Build.PL
+SHA1 6bf0f62eba8770067123e3c0152f12d5b2322036 Changes
 SHA1 b684a759c6fcf6378506173aec3dedec843a3696 Generate.pm
 SHA1 efa8cb615886410be8de15f5a6925697f624d278 INSTALL
-SHA1 f0b25844a06dd50683c52218672b3b783b211b87 MANIFEST
+SHA1 3fd79589e6e9a96c8bc1afc0ad0644c5cca5ab97 MANIFEST
 SHA1 efdcf207744061815a1688a1e83771a44a592f89 MANIFEST.SKIP
-SHA1 20b699d908afc45bc159deb5ebbd52d9a191ac9c META.yml
+SHA1 4722a0f949a1389ee4441ed91adb03212e85e6a7 META.yml
+SHA1 1849b2e69cd3bf568e221f73cf6e91ebae6489c0 Makefile.PL
 SHA1 d56038cc296a6d4d1f73d776d4f933c7120fc883 README
 SHA1 bf8192c64eff9a9356b0e45ef812457c7d672883 TODO
 SHA1 c1fa07c05e01abd3456a21972ef20b5e0880bc4c benchmark/lexical.pl
 SHA1 7fd6930bf946850e2a8b0ad1d151066b6f72f581 cmmg.pl
 SHA1 a9d3eb3c3c292639d17d8fa09a9f4522f6beb684 components/CommonMethods.pm
-SHA1 332a40b0762490d54ef12d023c297d4651d97898 components/array.m
-SHA1 ca36344fdc616503a46ecad04fc33b4d27fbf979 components/hash.m
-SHA1 4aeac3d806dfe8e717599b33175b12d85ca1ff0a components/scalar.m
+SHA1 b5316820246e0845b0a1f44c77c852b41009011b components/array.m
+SHA1 e51675066b8e9478aa377b9530c42fb31f710b7c components/hash.m
+SHA1 65870e277512f2152a7ce3e6cf2445297780fa03 components/scalar.m
 SHA1 c908d3e65227e6bdaf61925ccbbb11caf098b44d configure
 SHA1 ff41a37084f5f8f73f34da34c07ec5ff499c4343 end.pod
 SHA1 d39160a9f9faf6a3036888015958afd5e6360dab examples/simple1
 SHA1 76e80cf28137e0d2e623c5ae740f62fc2e7eb83e generate.PL
 SHA1 da39a3ee5e6b4b0d3255bfef95601890afd80709 lib/Class/.placeholder
-SHA1 34fa858b735fb30cea6ffcf17c008f6792cd6ff8 lib/Class/MethodMaker.pm
+SHA1 9deeeecd593344ccf10445e1d5a844c70b1ff518 lib/Class/MethodMaker.pm
 SHA1 e9cb30df1d39b6bf81a3eae841bba358220ae5b6 lib/Class/MethodMaker/Constants.pm
-SHA1 a5a34ca457bb7aec94dfcb24dc5087710ba3edcb lib/Class/MethodMaker/Engine.pm
+SHA1 69f9f482269905efe9967401c5d501fca253812a lib/Class/MethodMaker/Engine.pm
 SHA1 012cbe6a07c3c7a2e8cedc06cbc8972fe2a52524 lib/Class/MethodMaker/Engine.xs
-SHA1 ae8200b36fec609638f4bb96cc520efca4c8a861 lib/Class/MethodMaker/OptExt.pm
+SHA1 58dba4e3ee75fda97d12a1dbd83cc5525f410c75 lib/Class/MethodMaker/OptExt.pm
 SHA1 82016e962b7fb00b19c192d39d72a3d1054e9451 lib/Class/MethodMaker/V1Compat.pm
 SHA1 aefdc0ff1ed174960178107a624fbde5caeb9c0e make-pm
 SHA1 e7569e5eeef2a8558e6d4828be087a6e1a841295 t/0-signature.t
-SHA1 9fabeadac272a26f451e137edb6dd97655e91ce8 t/array.t
+SHA1 b51884934e7dc91824c7132789f5a075aeb9b243 t/array.t
 SHA1 305049a080aee52255793b7d1d49185db456b5af t/basic.t
 SHA1 36f35089b3cdd95f16dcbe5f42c43e31182cbb88 t/diffclass.t
-SHA1 596533b56fe526b886a49cde6caa546c864cf48f t/hash.t
+SHA1 4e6da0ab84d3581c892074d24807b55aaadefe2b t/hash.t
 SHA1 c1c5c7bc50fd8c72d33ecd3470a2217edd0241ab t/new.t
 SHA1 91e1bca16495461ea447c44f17f3d19b756e946a t/redefine-warnings.t
-SHA1 fe8e3e07688d65bdbc79cbf836dd6bb21574c4d9 t/scalar.t
+SHA1 46332dbc223396c9fa80e57eefaca61f163471c6 t/scalar.t
 SHA1 15982417c01cf68495c17068f799a24c89168ef5 t/test.pm
 SHA1 732e5dd8fbc6e826bbc55f7366e74715fe8f8a47 t/test_v1.pm
 SHA1 a0dd4ef433ac510d2e4095ee9397c9b0c6d4685f t/v1_abstract.t
@@ -82,7 +83,7 @@ SHA1 8289bad1b77581edb67b482f435dd2b6bd07e0e8 t/v1_tie_scalar.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.2 (Darwin)
 
-iD8DBQFBaCtWV6eZRcV4WK0RArW3AJ0bjw+r2xF0AhcGMmKMyrnFjfPacACfeJGx
-HlZkqBvZYHtMM81L2na2OGA=
-=HZ2Q
+iD8DBQFBcUpZV6eZRcV4WK0RAuTIAJ9GrxUS3wB1W3+Uk8Hu5JUiuBR07wCfXLo2
+CHX593yytJvI9HBNbak58DQ=
+=GJB1
 -----END PGP SIGNATURE-----

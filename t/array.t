@@ -23,7 +23,7 @@ use test qw( evcheck );
 
 BEGIN {
   # 1 for compilation test,
-  plan tests  => 425,
+  plan tests  => 438,
        todo   => [],
 }
 
@@ -556,6 +556,7 @@ ok evcheck(sub { $y = bless {}, 'X'; }, 'bless ( 2)'), 1,        'bless ( 2)';
   my $count = 0;
   sub new {
     my $class = shift;
+    my $i = shift;
     my $self = @_ ? $_[0] : ++$count;
     return bless \$self, $class;
   }
@@ -580,7 +581,7 @@ ok evcheck(sub { $y = bless {}, 'X'; }, 'bless ( 2)'), 1,        'bless ( 2)';
                                                   { -type => 'Y',
                                                     -default_ctor =>
                                                       sub {
-                                                        Y->new(-3);
+                                                        Y->new(undef, -3);
                                                       },
                                                   },
                                                   qw( df3 ),
@@ -1003,6 +1004,70 @@ no 'new' (if the ctor is called anyway, the program barfs).
   ok(evcheck(sub { @n = $x->nic; }, 'non-init ctor( 6)'), 1,
                                                          'non-init ctor ( 6)');
   ok ref $n[0], 'Y',                                     'non-init ctor ( 7)';
+}
+
+# -------------------------------------
+
+=head2 Tests 426--438: default_ctor (arg)
+
+=cut
+
+{
+  package S;
+  my $count = 0;
+  sub new {
+    my ($class, $arg) = @_;
+
+    die sprintf "Expected an X, got a '%s'\n", defined($arg) ? ref $arg : '*undef*'
+      unless UNIVERSAL::isa($arg, 'X');
+    my ($self) = $arg->a;
+    return bless \$self, $class;
+  }
+
+  sub value {
+    return ${$_[0]};
+  }
+}
+
+{
+  my ($n, @n);
+  $x->a(3);
+  ok(evcheck(sub { package X;
+                   Class::MethodMaker->import([array =>
+                                                 [{ -type => 'S',
+                                                    -default_ctor => 'new',
+                                                  },
+                                                  qw( dfx ),
+                                                 ],
+                                               ]);
+                 }, 'default ( 1)'), 1,             'default_ctor (arg) ( 1)');
+  ok(evcheck(sub { $n = $x->dfx_isset; }, 'default_ctor (arg)( 2)'), 1,
+                                                    'default_ctor (arg) ( 2)');
+  ok $n;                                           # default_ctor (arg) ( 3)
+  ok(evcheck(sub { $n = $x->dfx_index(1)->value; }, 'default_ctor (arg)( 4)'), 1,
+                                                    'default_ctor (arg) ( 4)');
+  ok $n, 3,                                         'default_ctor (arg) ( 5)';
+  print STDERR Data::Dumper->Dump([$x], [qw($x)])
+    if $ENV{TEST_DEBUG};
+  # This actually creates two Y instances; one explictly, and one not implictly
+  # by the _index method defaulting one (since it can't see the incoming)
+  # XXX not anymore XXX
+  # lvalue support has been dropped (I can't find a consistent way to support
+  # it in the presence of read callbacks).
+  my $xx = bless {}, "X"; $xx->a(2);
+  ok(evcheck(sub { $x->dfx_set(2, S->new($xx)) }, 'default_ctor (arg)( 6)'), 1,
+                                                    'default_ctor (arg) ( 6)');
+  ok(evcheck(sub { $n = $x->dfx_index(2)->value; }, 'default_ctor (arg)( 7)'), 1,
+                                                    'default_ctor (arg) ( 7)');
+  ok $n, 2,                                         'default_ctor (arg) ( 8)';
+  ok(evcheck(sub { $x->dfx_reset; },'default_ctor (arg)( 9)'), 1,
+                                                    'default_ctor (arg) ( 9)');
+  ok(evcheck(sub { $n = $x->dfx_isset; }, 'default_ctor (arg)(10)'), 1,
+                                                    'default_ctor (arg) (10)');
+  ok $n;                                           # default_ctor (arg) (11)
+  ok(evcheck(sub { $n = $x->dfx_index(2)->value; }, 'default_ctor (arg)(12)'), 1,
+                                                    'default_ctor (arg) (12)');
+  ok $n, 3,                                         'default_ctor (arg) (13)';
 }
 
 # -------------------------------------

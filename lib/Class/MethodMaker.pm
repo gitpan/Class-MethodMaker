@@ -584,7 +584,9 @@ option simultaneously.
 
 Takes a coderef to call to generate the default value.  This is called the
 first time a value is required, and afterwards whenever reset is called.  The
-subr is called with no arguments.
+subr is called with one argument, which is the object upon which the component
+exists (or the name of the class upon which the component is created, if the
+call is made on the class).
 
 If the C<-type> option is in effect, then the value may be a simple value,
 which shall be considered the name of a method to call on the class specified

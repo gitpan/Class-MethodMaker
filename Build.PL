@@ -44,6 +44,7 @@ my $build = $class->new(
                          PL_files      => +{ 'generate.PL', [ values %GENERATE ] },
                          autosplit     => [ values %GENERATE,
                                             catfile(qw(lib Class MethodMaker Engine.pm )) ],
+                         create_makefile_pl => 'passthrough',
                        );
 
 $build->create_build_script;

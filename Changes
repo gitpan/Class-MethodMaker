@@ -1,5 +1,9 @@
 Revision History for Class::MethodMaker (versions 2)
 
+2.04	Oct 16  3:03 PM GMT 2004
+	- Use Module::Build's compatibility mode to create a Makefile.PL
+	- Add an argument of the subject object to default ctor calls
+
 2.03	Oct  9  6:12 PM GMT 2004
 	- Use Module::Build rather than ExtUtils::MakeMaker
 	- Add XS code to set created sub names in profiler, etc.

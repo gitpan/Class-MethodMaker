@@ -23,7 +23,7 @@ use test qw( evcheck );
 
 BEGIN {
   # 1 for compilation test,
-  plan tests  => 426,
+  plan tests  => 439,
        todo   => [],
 }
 
@@ -596,6 +596,7 @@ ok evcheck(sub { $y = bless {}, 'X'; }, 'bless ( 2)'), 1,        'bless ( 2)';
   my $count = 0;
   sub new {
     my $class = shift;
+    my $i = shift;
     my $self = @_ ? $_[0] : ++$count;
     return bless \$self, $class;
   }
@@ -620,7 +621,7 @@ ok evcheck(sub { $y = bless {}, 'X'; }, 'bless ( 2)'), 1,        'bless ( 2)';
                                                   { -type => 'Y',
                                                     -default_ctor =>
                                                       sub {
-                                                        Y->new(-3);
+                                                        Y->new(undef,-3);
                                                       },
                                                   },
                                                   qw( df3 ),
@@ -964,6 +965,69 @@ Check that calling a(), with no arguments, doesn't instantiate a new instance
   ok keys %$n, 0,                                                'clear (15)';
   ok(evcheck(sub { $n = $x->a_isset('a'); }, 'clear (15)'), 1,   'clear (16)');
   ok ! $n;                                                      # clear (17)
+}
+
+# -------------------------------------
+
+=head2 Tests 427--439: default_ctor (arg)
+
+=cut
+
+{
+  package S;
+  my $count = 0;
+  sub new {
+    my ($class, $arg) = @_;
+    my $self = $arg->a_index("a");
+    return bless \$self, $class;
+  }
+
+  sub value {
+    return ${$_[0]};
+  }
+
+  sub reset {
+    $count = 0;
+  }
+}
+
+{
+  my ($n, %n);
+  ok(evcheck(sub { package X;
+                   Class::MethodMaker->import([hash =>
+                                                 [{ -type => 'S',
+                                                    -default_ctor => 'new',
+                                                  },
+                                                  qw( dfx ),
+                                                 ],
+                                               ]);
+                 }, 'default ( 1)'), 1,             'default_ctor (arg) ( 1)');
+  ok(evcheck(sub { $n = $x->dfx_isset; }, 'default_ctor (arg)( 2)'), 1,
+                                                    'default_ctor (arg) ( 2)');
+  ok $n;                                           # default_ctor (arg) ( 3)
+  $x->a(a=>3);
+  ok(evcheck(sub { $n = $x->dfx_index(1)->value; }, 'default_ctor (arg)( 4)'), 1,
+                                                    'default_ctor (arg) ( 4)');
+  ok $n, 3,                                         'default_ctor (arg) ( 5)';
+  # This actually creates two Y instances; one explictly, and one not implictly
+  # by the _index method defaulting one (since it can't see the incoming)
+  # XXX not anymore XXX
+  # lvalue support has been dropped (I can't find a consistent way to support
+  # it in the presence of read callbacks).
+  my $xx = bless {}, 'X'; $xx->a(a=>2);
+  ok(evcheck(sub { $x->dfx_set(2, S->new($xx)); }, 'default_ctor (arg)( 6)'), 1,
+                                                    'default_ctor (arg) ( 6)');
+  ok(evcheck(sub { $n = $x->dfx_index(2)->value; }, 'default_ctor (arg)( 7)'), 1,
+                                                    'default_ctor (arg) ( 7)');
+  ok $n, 2,                                         'default_ctor (arg) ( 8)';
+  ok(evcheck(sub { $x->dfx_reset; },'default_ctor (arg)( 9)'), 1,
+                                                    'default_ctor (arg) ( 9)');
+  ok(evcheck(sub { $n = $x->dfx_isset; }, 'default_ctor (arg)(10)'), 1,
+                                                    'default_ctor (arg) (10)');
+  ok $n;                                           # default_ctor (arg) (11)
+  ok(evcheck(sub { $n = $x->dfx_index(2)->value; }, 'default_ctor (arg)(12)'), 1,
+                                                    'default_ctor (arg) (12)');
+  ok $n, 3,                                         'default_ctor (arg) (13)';
 }
 
 # -------------------------------------
