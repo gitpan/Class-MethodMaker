@@ -1,11 +1,18 @@
-use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
-    'NAME'	=> 'Class::MethodMaker',
-    'VERSION_FROM' => 'MethodMaker.pm', # finds $VERSION
-    'dist' => {
-	       COMPRESS => 'gzip',
-	       SUFFIX   => 'gz',
-	      },
-);
+require 5.00307;
+
+use File::Spec::Functions qw( catfile );
+
+use constant MOD_REQS =>
+  [
+  ];
+
+use constant EXEC_REQS =>
+  [
+  ];
+
+use constant NAME         => 'Class-MethodMaker';
+use constant VERSION_FROM => catfile (qw( lib Class MethodMaker.pm ));
+use constant AUTHOR       => 'Martyn J. Pearce fluffy@cpan.org';
+use constant ABSTRACT     => 'a module for creating generic methods';
+
+use make;

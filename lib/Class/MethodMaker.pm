@@ -1,24 +1,10 @@
+# (X)Emacs mode: -*- cperl -*-
+
 package Class::MethodMaker;
-
-#
-# $Id: MethodMaker.pm,v 1.72 2001/01/11 17:48:21 recoil Exp $
-#
-
-# Copyright (c) 2001, 2000 Martyn J. Pearce.  This program is free
-# software; you can redistribute it and/or modify it under the same
-# terms as Perl itself.
-
-# Copyright 1998, 1999, 2000 Evolution Online Systems, Inc.  You may use
-# this software for free under the terms of the MIT License.  More info
-# posted at http://www.evolution.com, or contact info@evolution.com
-
-# Copyright (c) 1996 Organic Online. All rights reserved. This program is
-# free software; you can redistribute it and/or modify it under the same
-# terms as Perl itself.
 
 =head1 NAME
 
-B<Class::MethodMaker> - a module for creating generic methods
+Class::MethodMaker - a module for creating generic methods
 
 =head1 SYNOPSIS
 
@@ -56,40 +42,28 @@ amending any existing code that does use them not to.  If you believe
 that their removal will cast an unacceptable pall over your life, please
 contact the maintainer, or get a new life: whichever is easier.
 
-=head1  AUTHOR
-
-(Original) Peter Seibel (Organic Online).
-
-Current Maintainer: Martyn J. Pearce fluffy@engineer.com
-
-Contributions from:
-
-  Evolution Online Systems, Inc. http://www.evolution.com
-  Matthew Persico
-  Yitzchak Scott-Thoennes
-
-=head1  SEE ALSO
-
-Z<>
-
 =cut
 
-use strict;
+# ----------------------------------------------------------------------------
+
+# Pragmas -----------------------------
+
 require 5.00307; # for the ->isa method.
-use Carp qw( carp cluck croak );
+use strict;
+
+# Inheritance -------------------------
 
 use AutoLoader;
-use vars '@ISA';
+use vars qw( @ISA );
 @ISA = qw ( AutoLoader );
 
-=head1 VERSION
+# Utility -----------------------------
 
-Class::MethodMaker v1.02
+use Carp qw( carp cluck croak );
 
-=cut
-
-use vars '$VERSION';
-$VERSION = "1.02";
+use vars qw( $VERSION $PACKAGE );
+$VERSION = '1.04';
+$PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------
 
@@ -129,6 +103,8 @@ sub find_target_class {
   return $class;
 }
 
+# -------------------------------------
+
 sub import {
   my ($class, @args) = @_;
 
@@ -145,6 +121,8 @@ sub import {
 
   @args and $class->make(@args);
 }
+
+# -------------------------------------
 
 sub make {
   my ($method_maker_class, @args) = @_;
@@ -178,6 +156,8 @@ sub make {
   return;
 }
 
+# -------------------------------------
+
 sub install_methods {
   my ($class, %methods) = @_;
 
@@ -206,10 +186,13 @@ sub install_methods {
   }
 }
 
-1;
+1; # keep require happy
+
+# ----------------------------------------------------------------------------
 
 __END__
 
+# AutoLoaded Methods
 
 =head1 SUPPORTED METHOD TYPES
 
@@ -326,6 +309,43 @@ sub new_hash_init {
         $self->$_($args{$_});
       }
       $self;
+    };
+  }
+  $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------------
+
+=head2 new_with_args
+
+Creates a basic constructor.
+
+Takes a single string or a reference to an array of strings as its
+argument.  For each string creates a simple method that creates and
+returns an object of the appropriate class.
+
+This method may be called as a class method, as usual, or as in instance
+method, in which case a new object of the same class as the instance
+will be created.  I<Note that C<new_hash_init> works slightly
+differently with regard to being called on an instance.>
+
+Constructor arguments will be stored as a key, value pairs in the
+object. No check is done regarding the consistencies of the data
+passed to the constructor and the accessor methods created.
+
+=cut
+
+# added by Dominique Dumont (22.i.02)
+sub new_with_args {
+  my ($class, @args) = @_;
+  my %methods;
+  foreach (@args) {
+    $methods{$_} = sub {
+      my $class = shift;
+      my @c_args = @_ ;
+      $class = ref $class || $class;
+      my $self = { @c_args };
+      bless $self, $class;
     };
   }
   $class->install_methods(%methods);
@@ -862,17 +882,26 @@ sub object_list {
   my %methods;
 
   while (@args) {
-    my $class = shift @args;
-    my $list = shift @args or die "No slot names for $class";
+    # DD: changed to $obj_class to avoid clobberring the $class declared 4
+    # line above
+    my $obj_class = shift @args;
+    my $list = shift @args or die "No slot names for $obj_class";
 
     my @list = ( ref($list) eq 'ARRAY' ) ? @$list : ($list);
 
     my $obj_def;
     foreach $obj_def (@list) {
-      my $type = $class;
-            # Hmmm. We have to do this for the closure to work. I.e. using
-            # $class in the closure dosen't work. Someday I'll actually
-            # understand scoping in Perl. [ Uh, is this true? 11/11/96 -PBS ]
+      my $type = $obj_class;
+
+      # Hmmm. We have to do this for the closure to work. I.e. using
+      # $obj_class in the closure dosen't work. Someday I'll actually
+      # understand scoping in Perl. [ Uh, is this true? 11/11/96 -PBS ]
+
+      # DD (22.1.2002): That's because the closure keeps a 'reference' to the
+      # unique storage area hidden behind $obj_class. Its value changes at
+      # each iteration of the 'while' loop. On the other hand, a new $type
+      # variable (i.e. storage area) is created at each iteration of the
+      # loop. Hence the value stored in each $type variable is not clobeered.
 
       my ( $name, @composites );
       my $new_meth = 'new';
@@ -882,7 +911,7 @@ sub object_list {
         $name = $obj_def->{'slot'};
         my $composites = $obj_def->{'comp_mthds'};
         @composites = ref($composites) eq 'ARRAY' ? @$composites
-                            : defined $composites ? ($composites) : ();
+          : defined $composites ? ($composites) : ();
       }
 
       $methods{$name} = sub {
@@ -892,50 +921,16 @@ sub object_list {
           @list = @{ $list[0] };
         }
         push @{$self->{$name}}, map {
-          (ref $_ and UNIVERSAL::isa($_, $class)) ? $_ : $type->$new_meth($_)
+          (ref $_ and UNIVERSAL::isa($_, $obj_class)) ?
+            $_ : $type->$new_meth($_)
         } @list;
 
         # Use wantarray for consistency with list, which uses it for
         # consistency with its own doco., and the hash impl.
-
         return wantarray ? @{$self->{$name}} : $self->{$name};
       };
 
-      $methods{"pop_$name"} = sub {
-        my ($self) = @_;
-        pop @{$self->{$name}}
-      };
-
-      $methods{"push_$name"} = sub {
-        my ($self, @values) = @_;
-        push @{$self->{$name}}, @values;
-      };
-
-      $methods{"shift_$name"} = sub {
-        my ($self) = @_;
-        shift @{$self->{$name}}
-      };
-
-      $methods{"unshift_$name"} = sub {
-        my ($self, @values) = @_;
-        unshift @{$self->{$name}}, @values;
-      };
-
-      $methods{"splice_$name"} = sub {
-        my ($self, $offset, $len, @list) = @_;
-        splice(@{$self->{$name}}, $offset, $len, @list);
-      };
-
-      $methods{"clear_$name"} = sub {
-        my ($self) = @_;
-        $self->{$name} = [];
-      };
-
-
-      $methods{"count_$name"} = sub {
-        my ($self) = @_;
-        return exists $self->{$name} ? scalar @{$self->{$name}} : 0;
-      };
+      $class->_add_list_methods(\%methods, $name);
 
       #
       # Deprecated in line with list, v0.95 (1.vi.00)
@@ -944,36 +939,7 @@ sub object_list {
         my ($self) = @_;
         $self->{$name};
       };
-      
-      $methods{"index_$name"} = sub {
-        my $self = shift;
-        my (@indices) = @_;
-        my @Result;
-        push @Result, $self->{$name}->[$_]
-          for @indices;
-        return $Result[0] if @_ == 1;
-        return wantarray ? @Result : \@Result;
-      };
-      
-      foreach (keys %methods) {
-        /^(.*)_([^_]*)$/ or next;
-        my ($verb, $name) = ($1, $2);
-        $methods{"${name}_$verb"} = $methods{$_};
-      }
-      
-      for my $method_name (("set_$name", "${name}_set")) {
-        $methods{$method_name} = sub {
-          my $self = shift;
-          my @args = @_;
-          croak "$method_name expects an even number of fields\n"
-              if @args % 2;
-          while ( my ($index, $value) = splice @args, 0, 2 ) {
-            $self->{$name}->[$index] = $value;
-          }
-          return @_ / 2;
-        };
-      }
-        
+
       my $meth;
       foreach $meth (@composites) {
         $methods{$meth} = sub {
@@ -983,10 +949,243 @@ sub object_list {
       }
     }
   }
-  $class = $class; # Huh? Without this line the next line doesn't work!
+
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
+=head2 object_tie_list
+
+Functions like C<tie_list>, but maintains an array of referenced objects
+in each slot.
+
+ object_tie_list =>
+  [
+    {
+      slot => xxx, # or [ ... , ... ]
+      tie_array => [ 'ArrayName', args ,...] ,
+      class => ['ObjName', constructor_args ]
+    },
+    ...
+  ]
+
+When xxx is called with one or several arguments,
+Each argument is:
+
+=over
+
+=item *
+
+Stored in the array if the argument is an object of the class 'ObjName'.
+
+=item *
+
+Used to create a new object of the class 'ObjName' if the argument is
+an array ref. The elements of the array ref are passed to the
+constructor *after* the default constructor arguments.
+
+=item *
+
+Discarded if any other case. A new object is created using the default
+constructor arguments and stored in the array.
+
+=back
+
+=cut
+
+# no support for forwarded methods (may not make sense)
+
+sub object_tie_list {
+  my ($class, @args) = @_;
+  my %methods;
+
+  while (@args) {
+    my $obj_tie_ref = shift @args;
+    my $obj_class_ref = $obj_tie_ref->{class}
+      or croak "No class passed to object_tie_list";
+    my $tie_array_ref = $obj_tie_ref->{tie_array}
+      or croak "No tied array name passed to object_tie_list";
+
+    my $list = $obj_tie_ref->{slot}
+      or croak "No slot names passef to object_tie_list";
+
+    my @slot_list = ( ref($list) eq 'ARRAY' ) ? @$list : ($list);
+
+    #    my $composites = $obj_tie_ref->{'comp_mthds'};
+    #    my @composites = ref($composites) eq 'ARRAY' ? @$composites
+    #      : defined $composites ? ($composites) : ();
+
+    my $obj_class = shift @$obj_class_ref;
+
+    foreach my $obj_def (@slot_list) {
+      my $new_meth = 'new';
+      my $name = $obj_def; # kept for closures
+
+      $methods{$name} = sub {
+        my ($self, @list) = @_;
+
+        if ( ! defined $self->{$name} )
+          {
+            my ($tie_class, @c_args) = @$tie_array_ref ;
+            # second args of tie is forced into a scalar context.
+            tie my (@array), $tie_class, @c_args;
+            $self->{$name} = \@array;
+          }
+
+        @{$self->{$name}} =
+          map {
+            (ref $_ and UNIVERSAL::isa($_, $obj_class)) ? $_ :
+              ref $_ eq 'ARRAY' ? $obj_class->$new_meth(@$_) :
+                $obj_class->$new_meth(@$obj_class_ref)
+            } @list if scalar @list;
+
+        # Use wantarray for consistency with list, which uses it for
+        # consistency with its own doco., and the hash impl.
+
+        return wantarray ? @{$self->{$name}} : $self->{$name};
+      };
+
+      $class->_add_list_methods(\%methods, $name);
+
+      #      my $meth;
+      #      foreach $meth (@composites) {
+      #        $methods{$meth} = sub {
+      #          my ($self, @args) = @_;
+      #          map { $_->$meth(@args) } $self->$name()
+      #        };
+      #      }
+    }
+  }
+
+  $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------------
+
+=head2 object_tie_hash
+
+Functions like C<tie_hash>, but maintains an array of referenced objects
+in each slot.
+
+ object_tie_hash =>
+  [
+    {
+      slot => xxx, # or [ ... , ... ]
+      tie_hash => [ 'HashName', args ,...] ,
+      class => ['ObjName', @constructor_args ]
+    },
+    ...
+  ]
+
+When xxx is called with more than one argument, xxx is treated as the key.
+If the second argument is a:
+
+=over
+
+=item *
+
+An object of the class 'ObjName' then the object is the new value of
+the key 'xxx'.
+
+=item *
+
+An array ref. A new object of the class 'ObjName' is created and
+stored in the hash. The elements of the array ref are passed to the
+constructor *after* the default constructor arguments.
+
+=item *
+
+Anything else: A new object is created using the default constructor
+arguments.
+
+=back
+
+Example, if the default constructor arguments are @c_args :
+
+ xxx(
+     # xxx[0] = $obj->isa('ObjName') ? $obj : ObjName->new(@c_args)
+     $obj,
+     # xxx[1] = ObjName->new(@c_args, arg => 'bar')
+     [ arg => 'bar'],
+     # xxx[2 to 8] = ObjName->new(@constructor_arg)
+      1 .. 6
+    )
+
+=cut
+
+# no support for forwarded methods (may not make sense)
+
+sub object_tie_hash {
+  my ($class, @args) = @_;
+  my %methods;
+
+  while (@args) {
+    my $obj_tie_ref = shift @args;
+    my $obj_class_ref = $obj_tie_ref->{class}
+      or croak "No class passed to object_tie_hash";
+    my $tie_hash_ref = $obj_tie_ref->{tie_hash}
+      or croak "No tied hash name passed to object_tie_hash";
+
+    my $hash = $obj_tie_ref->{slot}
+      or croak "No slot names passef to object_tie_hash";
+
+    my @slot_hash = ( ref($hash) eq 'ARRAY' ) ? @$hash : ($hash);
+
+    #    my $composites = $obj_tie_ref->{'comp_mthds'};
+    #    my @composites = ref($composites) eq 'ARRAY' ? @$composites
+    #      : defined $composites ? ($composites) : ();
+
+    my $obj_class = shift @$obj_class_ref;
+
+    foreach my $obj_def (@slot_hash) {
+      my $new_meth = 'new';
+      my $name = $obj_def; # kept for closures
+
+      $methods{$name} = sub {
+        my ($self, @list) = @_;
+        # when creating : key => [ constructor args ] , key => ...
+        # or  key => obj , key => obj ...
+
+        if ( ! defined $self->{$name} ) {
+          my ($tie_class, @c_args) = @$tie_hash_ref ;
+          # second args of tie is forced into a scalar context.
+          tie my (%hash), $tie_class, @c_args;
+          $self->{$name} = \%hash;
+        }
+
+        if (scalar @list == 1) {
+          my $key = shift @list;
+
+          if (ref $key eq 'ARRAY') {
+            return @{$self->{$name}}{@$key};
+          } else {
+            return $self->{$name}->{$key};
+          }
+        } else {
+          while (1) {
+            my $key = shift @list;
+            defined $key or last;
+            my $value = shift @list;
+            defined $value or carp "No value for key $key.";
+
+            $self->{$name}->{$key} =
+              (ref $value and UNIVERSAL::isa($value, $obj_class))
+                ? $value
+                  : ref $value eq 'ARRAY'
+                    ? $obj_class->$new_meth(@$obj_class_ref,@$value)
+                      : $obj_class->$new_meth(@$obj_class_ref) ;
+          }
+        }
+        wantarray ? %{$self->{$name}} : $self->{$name};
+      };
+
+      $class->_add_hash_methods(\%methods, $name) ;
+
+    }
+  }
+  $class->install_methods(%methods);
+}
 
 # ----------------------------------------------------------------------
 
@@ -1441,7 +1640,6 @@ set to the corresponding value.  No return.
 
 =cut
 
-# *** Any additinal/changed methods must be mirrored in object_list
 sub list {
   my ($class, @args) = @_;
   my %methods;
@@ -1469,76 +1667,7 @@ sub list {
         return wantarray ? @{$self->{$field}} : $self->{$field};
       };
 
-    $methods{"${field}_pop"} =
-    $methods{"pop_$field"} =
-      sub {
-        my ($self) = @_;
-        pop @{$self->{$field}}
-      };
-
-    $methods{"${field}_push"} =
-    $methods{"push_$field"} =
-      sub {
-        my ($self, @values) = @_;
-	push @{$self->{$field}}, @values;
-      };
-
-    $methods{"${field}_shift"} =
-    $methods{"shift_$field"} =
-      sub {
-        my ($self) = @_;
-        shift @{$self->{$field}}
-      };
-
-    $methods{"${field}_unshift"} =
-    $methods{"unshift_$field"} =
-      sub {
-        my ($self, @values) = @_;
-        unshift @{$self->{$field}}, @values;
-      };
-
-    $methods{"${field}_splice"} =
-    $methods{"splice_$field"} =
-      sub {
-        my ($self, $offset, $len, @list) = @_;
-        splice(@{$self->{$field}}, $offset, $len, @list);
-      };
-
-    $methods{"${field}_clear"} =
-    $methods{"clear_$field"} =
-      sub {
-        my ($self) = @_;
-        $self->{$field} = [];
-      };
-
-    $methods{"${field}_count"} =
-    $methods{"count_$field"} =
-      sub {
-        my ($self) = @_;
-        return exists $self->{$field} ? scalar @{$self->{$field}} : 0;
-      };
-
-    $methods{"${field}_index"} =
-      sub {
-	my $self = shift;
-	my (@indices) = @_;
-	my @Result;
-	push @Result, $self->{$field}->[$_]
-	  for @indices;
-	return wantarray ? @Result : \@Result;
-      };
-
-    my $method_name = "${field}_set";
-    $methods{$method_name} =
-      sub {
-	my $self = shift;
-	my @args = @_;
-	croak "$method_name expects an even number of fields\n"
-	  if @args % 2;
-	while ( my ($index, $value) = splice @args, 0, 2 ) {
-	  $self->{$field}->[$index] = $value;
-	}
-      };
+    $class->_add_list_methods(\%methods, $field);
 
     #
     # Deprecated. v0.95 1.vi.00
@@ -1548,8 +1677,150 @@ sub list {
         my ($self) = @_;
         $self->{$field};
       };
+
   }
   $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------
+# added by Dominique Dumont (22.i.02)
+
+=head2 tie_list
+
+Much like list, but can use a tied list instead.
+
+Takes a list of pairs, where the first is the name of the component,
+the second is an array reference.  The array reference takes the usual
+tie parameters.
+
+For instance if Array_A and ArrayB are tied arrays, you can have:
+
+  tie_list =>
+  [
+   foo => [ 'Array_A',   foo => 'x', bar => 'B' ],
+   baz => [ 'ArrayB',    baz => 0]
+  ],
+
+=cut
+
+sub tie_list
+  {
+    my ($class, @args) = @_;
+    my %methods;
+
+    while ( my ($fieldr, $tie_args) = splice (@args, 0, 2))
+      {
+        my $field;
+        my ($tie_class,@c_args)= @$tie_args ;
+
+        foreach $field (ref $fieldr ? @$fieldr : $fieldr)
+          {
+            $methods{$field} =
+              sub
+                {
+                  my $self = shift;
+                  my @list = @_;
+
+                  if ( ! defined $self->{$field} )
+                    {
+                      # second args of tie is forced into a scalar context.
+                      tie my (@array), $tie_class, @c_args;
+                      $self->{$field} = \@array;
+                    }
+
+                  @{$self->{$field}} =  @_ if scalar @_ ;
+
+                  return wantarray ? @{$self->{$field}} : $self->{$field};
+                };
+            $class->_add_list_methods(\%methods, $field);
+          }
+
+        $class->install_methods(%methods);
+      }
+  }
+
+# -------------------------------------
+
+# added by Dominique Dumont (22.i.02)
+sub _add_list_methods {
+  my ($class,$methods, $field) = @_;
+
+  $methods->{"${field}_pop"} =
+    $methods->{"pop_$field"} =
+      sub {
+        my ($self) = @_;
+        pop @{$self->{$field}}
+      };
+
+  $methods->{"${field}_push"} =
+    $methods->{"push_$field"} =
+      sub {
+        my ($self, @values) = @_;
+        push @{$self->{$field}}, @values;
+      };
+
+  $methods->{"${field}_shift"} =
+    $methods->{"shift_$field"} =
+      sub {
+        my ($self) = @_;
+        shift @{$self->{$field}}
+      };
+
+  $methods->{"${field}_unshift"} =
+    $methods->{"unshift_$field"} =
+      sub {
+        my ($self, @values) = @_;
+        unshift @{$self->{$field}}, @values;
+      };
+
+  $methods->{"${field}_splice"} =
+    $methods->{"splice_$field"} =
+      sub {
+        my ($self, $offset, $len, @list) = @_;
+        splice(@{$self->{$field}}, $offset, $len, @list);
+      };
+
+  $methods->{"${field}_clear"} =
+    $methods->{"clear_$field"} =
+      sub {
+        my ($self) = @_;
+        # this code may clobbed references passed by the user
+        # $self->{$field} = [];
+        @{$self->{$field}} = () ;
+      };
+
+  $methods->{"${field}_count"} =
+    $methods->{"count_$field"} =
+      sub {
+        my ($self) = @_;
+        return exists $self->{$field} ? scalar @{$self->{$field}} : 0;
+      };
+
+  $methods->{"${field}_index"} =
+    $methods->{"index_$field"} =
+      sub {
+        my $self = shift;
+        my (@indices) = @_;
+        my @Result;
+        push @Result, $self->{$field}->[$_]
+          for @indices;
+        return $Result[0] if @_ == 1;
+        return wantarray ? @Result : \@Result;
+      };
+
+  foreach my $method_name (("${field}_set" ,"set_$field")) {
+    $methods->{$method_name} =
+      sub {
+        my $self = shift;
+        my @args = @_;
+        croak "$method_name expects an even number of fields\n"
+          if @args % 2;
+        while ( my ($index, $value) = splice @args, 0, 2 ) {
+          $self->{$field}->[$index] = $value;
+        }
+        return @_ / 2;          # required for object_list
+      };
+  }
 }
 
 # ----------------------------------------------------------------------
@@ -1656,38 +1927,7 @@ sub hash {
         }
       };
 
-    $methods{$field . "_keys"} =
-      sub {
-        my ($self) = @_;
-        keys %{$self->{$field}};
-      };
-
-    $methods{$field . "_values"} =
-      sub {
-        my ($self) = @_;
-        values %{$self->{$field}};
-      };
-
-    $methods{$field . "_exists"} =
-      sub {
-        my ($self) = shift;
-        my ($key) = @_;
-        return
-          exists $self->{$field} && exists $self->{$field}->{$key};
-      };
-
-    $methods{$field . "_tally"} =
-      sub {
-        my ($self, @list) = @_;
-        defined $self->{$field} or $self->{$field} = {};
-        map { ++$self->{$field}->{$_} } @list;
-      };
-
-    $methods{$field . "_delete"} =
-      sub {
-        my ($self, @keys) = @_;
-        delete @{$self->{$field}}{@keys};
-      };
+    $class->_add_hash_methods(\%methods, $field) ;
 
     $methods{$field . "_clear"} =
       sub {
@@ -1696,6 +1936,46 @@ sub hash {
       };
   }
   $class->install_methods(%methods);
+}
+
+# -------------------------------------
+
+# added by Dominique Dumont (22.i.02)
+sub _add_hash_methods {
+  my ($class,$methods, $field) = @_ ;
+
+  $methods->{$field . "_keys"} =
+    sub {
+      my ($self) = @_;
+      keys %{$self->{$field}};
+    };
+
+  $methods->{$field . "_values"} =
+    sub {
+      my ($self) = @_;
+      values %{$self->{$field}};
+    };
+
+  $methods->{$field . "_exists"} =
+    sub {
+      my ($self) = shift;
+      my ($key) = @_;
+      return
+        exists $self->{$field} && exists $self->{$field}->{$key};
+    };
+
+  $methods->{$field . "_tally"} =
+    sub {
+      my ($self, @list) = @_;
+      defined $self->{$field} or $self->{$field} = {};
+      map { ++$self->{$field}->{$_} } @list;
+    };
+
+  $methods->{$field . "_delete"} =
+    sub {
+      my ($self, @keys) = @_;
+      delete @{$self->{$field}}{@keys};
+    };
 }
 
 # ----------------------------------------------------------------------
@@ -2075,6 +2355,60 @@ sub hash_of_lists {
   }
 }
 
+# ----------------------------------------------------------------------------
+
+=head2 tie_scalar
+
+Create a get/set method to deal with the tied scalar.
+
+Takes a list of pairs, where the first is the name of the component, the
+second is an array reference.  The array reference takes the usual tie
+parameters.
+
+For instance if Enum and Boolean are tied scalar that accept default values,
+you can have:
+
+  tie_scalar =>
+  [
+   foo => [ 'Enum',   enum => [qw/A B C/], default => 'B' ],
+   bar => [ 'Enum',   enum => [qw/T0 T1/], default => 'T1'],
+   baz => ['Boolean', default => 0]
+  ],
+
+
+=cut
+
+# added by Dominique Dumont (22.i.02)
+sub tie_scalar {
+  my ($class, @args) = @_;
+  my %methods;
+
+  while ( my ($fieldr, $tie_args) = splice (@args, 0, 2)) {
+    my $field;
+    my ($class,@c_args)= @$tie_args ;
+
+    foreach $field (ref $fieldr ? @$fieldr : $fieldr) {
+      $methods{$field} =
+        sub {
+          my ($self, $value) = @_;
+
+          if ( ! defined $self->{$field} ) {
+            my $scalar;
+            # second args of tie is forced into a scalar context.
+            tie ($scalar, $class, @c_args);
+            $self->{$field} = \$scalar;
+          }
+
+          my $ref = $self->{$field} ;
+          $$ref=$value if defined $value;
+          return $$ref ;
+        };
+    }
+
+  }
+  $class->install_methods(%methods);
+}
+
 # ----------------------------------------------------------------------
 
 =head2  tie_hash
@@ -2148,38 +2482,7 @@ sub tie_hash {
           }
         };
 
-      $methods{$field . "_keys"} =
-        sub {
-          my ($self) = @_;
-          keys %{$self->{$field}};
-        };
-
-      $methods{$field . "_values"} =
-        sub {
-          my ($self) = @_;
-          values %{$self->{$field}};
-        };
-
-      $methods{$field . "_exists"} =
-        sub {
-          my ($self) = shift;
-          my ($key) = @_;
-          return
-            exists $self->{$field} && exists $self->{$field}->{$key};
-        };
-
-      $methods{$field . "_tally"} =
-        sub {
-          my ($self, @list) = @_;
-          defined $self->{$field} or $self->{$field} = {};
-          map { ++$self->{$field}->{$_} } @list;
-        };
-
-      $methods{$field . "_delete"} =
-        sub {
-          my ($self, @keys) = @_;
-          delete @{$self->{$field}}{@keys};
-        };
+      $class->_add_hash_methods(\%methods, $field);
     }
   }
   $class->install_methods(%methods);
@@ -2378,11 +2681,11 @@ incremented, or reset.  For value x, the methods are:
 
 (accepts argument to set),
 
-=item   incr_x
+=item   x_incr
 
 (accepts argument for increment size),
 
-=item   reset_x.
+=item   x_reset
 
 The counter is implicitly initialized to zero.
 
@@ -2613,3 +2916,50 @@ sub builtin_class {
   }
   $class->install_methods(%results);
 }
+
+=head1 EXAMPLES
+
+Z<>
+
+=head1 BUGS
+
+Z<>
+
+=head1 REPORTING BUGS
+
+Email the author.
+
+=head1  AUTHOR
+
+Current Maintainer: Martyn J. Pearce fluffy@cpan.org
+
+Original Author: Peter Seibel (Organic Online)
+
+Contributions from:
+
+  Dominique Dumont (Dominique_Dumont@hp.com)
+    Hewlett-Packard Company. http://www.hp.com
+  Evolution Online Systems, Inc. http://www.evolution.com
+  Matthew Persico
+  Yitzchak Scott-Thoennes
+
+=head1 COPYRIGHT
+
+    Copyright (c) 2002, 2001, 2000 Martyn J. Pearce.  This program is free
+    software; you can redistribute it and/or modify it under the same terms as
+    Perl itself.
+
+    Copyright 1998, 1999, 2000 Evolution Online Systems, Inc.  You may use
+    this software for free under the terms of the MIT License.  More info
+    posted at http://www.evolution.com, or contact info@evolution.com
+
+    Copyright (c) 1996 Organic Online. All rights reserved. This program is
+    free software; you can redistribute it and/or modify it under the same
+    terms as Perl itself.
+
+=head1 SEE ALSO
+
+  C<Class::Struct>, C<Class::MakeMethods>, "Object-Oriented Perl" by Damian
+  Conway.
+
+=cut

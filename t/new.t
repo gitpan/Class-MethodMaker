@@ -2,13 +2,15 @@
 
 package X;
 
-use lib qw ( ./t );
-use Test;
+use ExtUtils::testlib;
 
 use Class::MethodMaker
   new => 'new',
-  new_with_init => 'new_with_init',
-  new_hash_init => 'new_hash_init';
+  new_with_args => 'new_with_args',
+  new_with_init => 'new_with_init', 
+  new_hash_init => 'new_hash_init', 
+  get_set => 'toto'
+  ;
 
 my $init_called;
 my @args_in_init;
@@ -35,6 +37,9 @@ sub bar {
   $self->{'bar'};
 }
 
+package main ;
+use lib qw ( ./t );
+use Test;
 
 TEST { 1 };
 
@@ -67,6 +72,10 @@ TEST { $foo_called };
 TEST { $bar_called };
 TEST { $o->foo == 123 };
 TEST { $o->bar == 456 };
+
+# new_with_args
+TEST { $o = X->new_with_args(toto => '3');};
+TEST { $o->toto eq '3'};
 
 exit 0;
 
