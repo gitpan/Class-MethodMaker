@@ -1,136 +1,72 @@
-Revision history for Class-MethodMaker.
+Revision History for Class::MethodMaker (versions 2)
 
-1.12  Sat Sep 13 10:27AM GMT
-	- Add INSTALL file
-	- Add -set_once options to get_set.  Note that these options are 
-	  experimental and will not be available in initial V2 (but V1 will
-	  continue to be maintained).
-          Patch contributed by John Millaway <John_Millaway@ghrsystems.com>.
+2.00	Nov 19 10:13 AM GMT 2003
+	- Flatten list passed to * in v1 list
+	- Fix buglet in object that called default_ctor method even when an
+	  explicit value was supplied
+	- Add compatiblity support for boolean
+	- Lots of documentation improvements
+	- Add html target to Makefile.PL
+	- Add implementation of _clear by default
+	- Add *_clear to array
+	- Add support for 5.6.x
+	- Add new -singleton
+	- Add compatiblity support for singleton
+	- Add compatiblity support for get_concat
+	- Add basic support for INTEGER type
+	- Add compatiblity support for get_counter
+	- Bug fixes to read callback
+	- Add compatiblity support for key_{attrib,with_create}
 
-1.11  Tue Aug 12 5:43PM GMT
-	- Integrate new build system supporting ExtUtils::MakeMaker with simple
-	  Makefile.PL, ExtUtils::MakeMaker with configure, and Module::Build.
-	- Integrate use of Module::Signature
-	- Optimize get_set 'x'.  Code contributed by Sam Tregar 
-	  <sam@tregar.com>
-	- Add new_hash_with_init
-          Code adapted from Class::MethodMaker::Util, written by
-          Marcel Gruenauer <marcel@noug.at>
-	- Add singleton & tests
-          Code adapted from Class::MethodMaker::Util, written by
-          Marcel Gruenauer <marcel@noug.at>
-	- Add deep_copy.
-	  Patch based on code supplied by Matthew Persico
-          <matthew.persico@lazard.com>
-	- Make copy non-experimental
-	- Make new_with_args experimental (it always should've been marked as
-	  such)
-	- Document static_list
-	- Correct static_list assignment on method 'x'
-	  Patch based on code supplied by Matthew Persico
-          <matthew.persico@lazard.com>
-	- Add extra tests for static_list assignment
+2.00a09     Sep 18 11:04 AM GMT 2003
+	- Add tie_scalar, static_hash, tie_hash for V1
+	- Abandon lvalue methods
+	- Add read & store callbacks (incomplete implementation; just enough
+	  for V1 methods)
+	- Add code for V1
+	- Add new_with_hash_with_init for V1
+	- Correct handling of default in array to auto-instantiate for prior
+	  keys as needed
+	- fix object_tie_list
+	- add set_once from V1
+	- add singleton for V1
+	- add basic INTEGER handling
+	- add get_concat, get_counter for V1
+	- add key_attrib for V1
 
-1.10  Sat Jan 25  3:59PM GMT 2003
-	- Add patch to maintain internal storage reference of 'list'.
-	  Patch courtesy of Dominique Dumont <domi@komarr.grenoble.hp.com>
-	- Improve documentation of 'list' 'x' me
-	- Remove unnecessary warning of undefined values to hash
+2.00a08     Jul 19 10:07 AM GMT 2003
+	- Fixes for static_get_set
+	- Add v1 tie_list, static_list, object_tie_list
+	- Add 'new'
+	- Add new_with_args for V1
+	- Add basic hash handling
+	- Many doc patches
 
-1.09  Fri Oct 25  6:58AM GMT 2002
-	- Improve documentation for experimental options for get_set; 
-	  problem notifications & doc. contributions from Tim Maher
-	  <tim@consultix-inc.com>
-	- Remove necessity to use 'set_x' / 'setx' methods in hash_init
-	  for -java, -eiffel-type get_set usages
-	- Remove warning of undefined values for initializing a hash
-	  (as they're perfectly legal and often useful)
+2.00a07     May 10  8:11 AM GMT 2003
+	- Tune object '*' method
+	- Add !syntax, nested scope, simple name, repeated calls to V2 syntax
+	- Add method-renaming syntax
+	- Add basic array type
+	- Make basic v1 lists work
+	- Add tie functionality
+	- Add v1 object_list
 
-1.08  Mon Oct 14  5:33PM GMT 2002
-	- Enable setting of list with $o->x(...) so hash_init is useful
-	  for lists
+2.00a06 Wed Jun 19  6:56 PM GMT 2002
+	- Add object v1 compatibility
 
-1.07  Tue Oct  1  7:04AM GMT 2002
-	- make make.pm 5.005_03 friendly (patches courtesy of Ed Avis, 
-	  <ed@membled.com>)
-	- Document implementation of default values with new_hash_init
-	  (courtesy of Kevin J. Rice, <kevin@justanyone.com>)
-	- Add static_list
-	- Remove deprecated push action from list() methods
+2.00a05 Tue Jun 18  7:06 AM GMT 2002
+	- Add '-default', '-default_ctor' options to scalar
 
-1.06  Fri May 31  7:15AM GMT 2002
-	- Don't perform make self-checks by default
+2.00a04 Sun Jun 16  3:48 PM GMT 2002
+	- Add '-forward' option to scalar
 
-1.05  Wed Feb  6  5:33PM GMT 2002
-	- Remove check for cut --version in make.pm on non-linux boxen
+2.00a03 Sun Jun 16 12:44 AM GMT 2002
+	- Add '-type' option to scalar
 
-1.04  Wed Jan 30  4:13PM GMT 2002
-	- Add tie_scalar, tie_list, object_tie_list, object_tie_hash,
-	  new_with_args methods (Courtesy of Dominique Dumont, Hewlett-Packard
-	  Company).
-	- Factorize accessor creation in _add_list_methods and
-	  _add_hash_methods (Courtesy of Dominique Dumont, Hewlett-Packard
-	  Company).
+2.00a02	Tue Jun 11  8:10 PM GMT 2002
+	- Add tests for scalar (v2)
+	- Add warning(s) for v2 types appearing in v1 mode
 
-1.03  Wed Jan 30  1:05PM GMT 2002
-	- Fix bug in t/hash_of_lists.t that assumed key order of hash
-	  (Courtesy of Bjoern Kriews)
-	- Fix naming of methods in object_list to match list
-
-1.02  Thu Jan 11  5:57PM GMT 2001
-	- Add corrections to make object_list act just like list 
-	  (Courtesy of Piers Cawley)
-
-1.00  Tue Sep 19  3:09PM GMT 2000
-	- Add ability to call new on instances as well as classes (Courtesy of
-	  Rafael Kitover).
-	- Add x_set method to list, hash_of_lists.
-	- Correction to -java flags for get_set (to use set_* rather than
-	  set*, etc.)
-	- Install methods can now eval a string if seen.
-	- List methods may all be used as x_verb now (although the
-	  pre-existing verb_x ones still exist for compatibility)
-	- Added x_index to list, hash_of_lists.
-
-0.96  Wed Jun  7  6:13AM GMT 2000
-	- Fix pre-5.005_03 breakage.
-	- Undeprecate get_set->clear_x (keep it for consistency), since all
-	  other basic types have a clear_ method.
-	- Add in (experimental) copy method.
-
-0.95  Thu Jun  1  8:12PM GMT 2000
-	- Fix bug in boolean that failed in inherited classes.
-	- Make get_set (undef) work.  Deprecate clear_x.
-	- -sugar reintroduced for backward compatibility only.
-	- Many more options to get_set.
-	- Added counter method.
-	- Made 5.004_04 compatible (I hope).
-	- Added hash x_clear method.
-	- Documented builtin class.
-	- Documented join addition to get_concat.
-
-0.94  Thu May 11  6:19AM GMT 2000
-	- Added static_get_set, and hashref arg handling to hash &
-	  static_hash; all courtesy of Matthew Persico.  Slight cleaning.
-	- Added more ideas to `TODO' list.
-
-0.93  Tue May  9  8:34AM GMT 2000
-	- Documentation update.  
-	- Various bug fixes.  
-	- Added object list (courtesy of Evolution Online Software). 
-	- Update get_concat to utilize a join field. 
-	- Remove some undocumented code.  
-	- Added tie_hash type. 
-	- Update tests, add in some for new types, remove tests for
-	  undocumented features.
-
-0.92  Added regression tests, originally written to exercise 0.91 and
-      then moved to a restructured MethodMaker.pm. One meta-method,
-      fields() was abandoned, and replaced with a different meta_method,
-      grouped_fields(), which adheres to the new calling structure.
-
-0.91  Bundled up in a proper package, released to CPAN 26 November 1996
-
-0.90  First stab -- released to CPAN without proper Makefile.PL or
-      anything.
-
+2.00a01	Fri Jun  6  2:38 AM GMT 2002
+	- Basic scalar implemented, passing get_set and static_get_set tests
+	  from v1

@@ -14,57 +14,70 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 511386b69bc0414454a526d105f550f5ef3a24b0 Build.PL
-SHA1 ee0154027d08ca4fdc7ad832db867abe5f902282 Changes
+SHA1 94eb0dc8b295e1ead3094a7aa8d9d2687f4726e2 Changes
 SHA1 efa8cb615886410be8de15f5a6925697f624d278 INSTALL
-SHA1 b018ea941a1eeb1f10697c7009625869f34fb69d MANIFEST
-SHA1 9455a57e829f0b56830de0c809ae8d1fa080c59d MANIFEST.SKIP
-SHA1 1ddd5503db06a1f70d511e4b5e171f1d9e627447 META.yml
-SHA1 52efbb14f266408019f649c2da5e577eb4d9fa04 Makefile.PL
-SHA1 9ebfb7e768dc49cbc29725e6fbff1c861e263a4b README
-SHA1 3e10a9b0f6c84181eb5c3be23a907d53c9634a5e TODO
-SHA1 8234e2d30df5aa5c4f2bc919adc55035fd74b388 configure
-SHA1 706bf7e6161340ba2cddd972b1bb05abfcb00ef7 lib/Class/MethodMaker.pm
-SHA1 16ddd5d6909b059d7219caf522773b0047a1dd5e make-pm
+SHA1 5645bd25175dcb642aa45bc21599566e8e15fe72 MANIFEST
+SHA1 d0164da806f2157381c3614662b6afa8bc04a762 MANIFEST.SKIP
+SHA1 3c4550e3a86284b56fb30117ada7b6106fdbdc14 Makefile.PL
+SHA1 5a0c004ba97c9d046ab6e791a6ab4940e477e44c README
+SHA1 bf8192c64eff9a9356b0e45ef812457c7d672883 TODO
+SHA1 c1fa07c05e01abd3456a21972ef20b5e0880bc4c benchmark/lexical.pl
+SHA1 7fd6930bf946850e2a8b0ad1d151066b6f72f581 cmmg.pl
+SHA1 a9d3eb3c3c292639d17d8fa09a9f4522f6beb684 components/CommonMethods.pm
+SHA1 4061ed676a452d5b50822aa0400289bdb31bbf88 components/array.m
+SHA1 9edef1c66f6112a63e1bc63989dcbfb06b8091fe components/hash.m
+SHA1 58f1ca40c4cd2a2b4056234ad3573bff511c2ee9 components/scalar.m
+SHA1 c908d3e65227e6bdaf61925ccbbb11caf098b44d configure
+SHA1 4d92bd340a187b361e11c7fc9790482f26390d12 end.pod
+SHA1 d39160a9f9faf6a3036888015958afd5e6360dab examples/simple1
+SHA1 da39a3ee5e6b4b0d3255bfef95601890afd80709 lib/Class/.placeholder
+SHA1 218aec98ae97f469477f21d614ef09214acd3160 lib/Class/MethodMaker.pm
+SHA1 e9cb30df1d39b6bf81a3eae841bba358220ae5b6 lib/Class/MethodMaker/Constants.pm
+SHA1 47b4948e9ed17605bb3fa7e0d755bfc8fc0087e6 lib/Class/MethodMaker/Engine.pm
+SHA1 ae8200b36fec609638f4bb96cc520efca4c8a861 lib/Class/MethodMaker/OptExt.pm
+SHA1 39c250fa45a94a844a2a2109805d61305069492a lib/Class/MethodMaker/V1Compat.pm
+SHA1 aefdc0ff1ed174960178107a624fbde5caeb9c0e make-pm
 SHA1 e7569e5eeef2a8558e6d4828be087a6e1a841295 t/0-signature.t
-SHA1 e08fdf553266a4c994669ee52b23d1a231f2ede7 t/Test.pm
-SHA1 a40117944e3c47225663c66b83c177806f6c9efc t/abstract.t
-SHA1 a2a20b10cecfbcfe8f7cf47fe9f924f16bb669d3 t/boolean.t
-SHA1 15c88b4e4f50b9d0a009797f8844253556a8e40a t/code.t
-SHA1 d8055b5e06e7ddfa35bdf8e3284357400f68fc89 t/copy.t
-SHA1 4569507a0459c9d16e5ff6bb60c54523d22829d9 t/counter.t
-SHA1 56e4a76141c827d4d111dd2087019327650fe4d3 t/find_test
-SHA1 7f62ab6b2502de460ffa7284121d6b8db8d4c996 t/get_concat.t
-SHA1 603d52fc1937a8c6db828439e848b5f155073da8 t/get_set.t
-SHA1 0770f39a24ad79cee01d8a9f0c6baabb32c6028f t/get_set_hi.t
-SHA1 5fdfcb1f59e5eab52e621bf715e9d7e66ef38002 t/grouped_fields.t
-SHA1 b20c0287ec988f204e476f55d27fd1e64f87e30b t/hash.t
-SHA1 f535f41535ea4fa00283cb11aa3aaef7b6acfa11 t/hash_of_lists.t
-SHA1 80e867179aa4df9135d278f156036bad17f72284 t/key_attrib.t
-SHA1 01d045c3cbf462480a5d755fc47e279a5d469238 t/key_with_create.t
-SHA1 55a9d17cf34c8a041a064b7ecac78634ad38608f t/list.t
-SHA1 59de988a23c56cdf843c74d251494c1f91ef0d7f t/listed_attrib.t
-SHA1 59286d2b0f19d92b9f787d242f7dbd79c6a28d5f t/method.t
-SHA1 d63ff984a5c020a315462b492f2b8bbd69f03232 t/new.t
-SHA1 0681c6255d78f3342cb4fcbaa2004fb5563cd2c4 t/new_hash_with_init.t
-SHA1 f497a85cc41e30cc0127a57d2ca11667a0f012c9 t/object.t
-SHA1 ca8cfb2b32254763273cf60a680f4c41b82ad288 t/object_list.t
-SHA1 90b752577a39679a2e9fa1b33951768e7d1fe3ea t/object_tie_hash.t
-SHA1 ffaa35ccf3423fe162808a11f800e97ff9ca5df0 t/object_tie_list.t
-SHA1 d4736865bf425d4ad6131618f03e10517fac8ac4 t/set_once.t
-SHA1 8709f7ecf147cf11762ed88e71029a02c31a0a6c t/set_once_static.t
-SHA1 c9f818ff4db09056285b9700ad652a4ed9e51147 t/singleton.t
-SHA1 5e98104b3f2e5966134fdf55dc8f364fdb878af6 t/static_get_set.t
-SHA1 b869becc0d0fdb54cc0bb34223de8cd113b2a2b8 t/static_hash.t
-SHA1 b1dd5cfcf9f6082ef6bdf8c3b17cd98a3c4091d9 t/static_list.t
-SHA1 abe2f44d3ca8bb135e04f0ee94f5740440c7328b t/struct.t
-SHA1 58e33afe861b5a9ef3a50d17abc09a063b1ce88f t/tie_hash.t
-SHA1 0fc811ee17166e9de41e09bfe82488885a693fc4 t/tie_list.t
-SHA1 3f6e54aa125bd1206c9a76c0f9df4293b1300a87 t/tie_scalar.t
+SHA1 9fabeadac272a26f451e137edb6dd97655e91ce8 t/array.t
+SHA1 305049a080aee52255793b7d1d49185db456b5af t/basic.t
+SHA1 36f35089b3cdd95f16dcbe5f42c43e31182cbb88 t/diffclass.t
+SHA1 596533b56fe526b886a49cde6caa546c864cf48f t/hash.t
+SHA1 c1c5c7bc50fd8c72d33ecd3470a2217edd0241ab t/new.t
+SHA1 fe8e3e07688d65bdbc79cbf836dd6bb21574c4d9 t/scalar.t
+SHA1 15982417c01cf68495c17068f799a24c89168ef5 t/test.pm
+SHA1 732e5dd8fbc6e826bbc55f7366e74715fe8f8a47 t/test_v1.pm
+SHA1 a0dd4ef433ac510d2e4095ee9397c9b0c6d4685f t/v1_abstract.t
+SHA1 8984cea4fedadd23f03b776833a031cc850dedb4 t/v1_boolean.t
+SHA1 df6872405fa3116f4fe40f291396ad3c3d29c1ca t/v1_code.t
+SHA1 c72763d06e2d8b3122d93f2996ddf5898c13f154 t/v1_copy.t
+SHA1 08dfb87c8814786b1cdb4bda436617ab1e05adaa t/v1_counter.t
+SHA1 076190c6d6a9273b86f561ac219a31999ef5d188 t/v1_get_concat.t
+SHA1 a8007cf6ff28e52f620e67eea63e5791bf72cfb3 t/v1_get_set.t
+SHA1 9e02f422261956fc72115eab034324701b89b11a t/v1_get_set_hi.t
+SHA1 0d84f480d66a70b24da7f2fafb8661a2a343c74a t/v1_hash.t
+SHA1 acc1ae131ed2f4693de9436d7d3a8042aaf0bc25 t/v1_key_attrib.t
+SHA1 6c8c3ed07bbd8a0bb4f45c87e11ed59e46301be3 t/v1_key_with_create.t
+SHA1 4a0ac1a705fa91436003226e13aa6dadfbfcc3e6 t/v1_list.t
+SHA1 b6e076795f078057fb731b1f357201c3a6aba343 t/v1_method.t
+SHA1 033c1b0b17c01d2c99d0ff1d932e0cf83a1c3f96 t/v1_new.t
+SHA1 ba2fb42e0dc13b25951fd742be49e8771bb891d1 t/v1_new_hash_with_init.t
+SHA1 2d67d279b50587a7cd89e6076f9a4c2f795eb09b t/v1_object.t
+SHA1 d35b73e600915176f41bd0edc0e3271e435a33c8 t/v1_object_list.t
+SHA1 481b7e2e02c5147f4a8f60e3e481de8969b6625f t/v1_object_tie_hash.t
+SHA1 8c7f3293c0a5065aacf461394829227c59179aa4 t/v1_object_tie_list.t
+SHA1 63143a976014a62c1b9f43c589db01ba8f1eeadc t/v1_set_once.t
+SHA1 4425e52243faff2d7a37f5836edc38912730e326 t/v1_set_once_static.t
+SHA1 c656a6019ea15123d5e9e7c989870f99f5163783 t/v1_singleton.t
+SHA1 0b01290de8e968bbe84ea66c2910e2968a09d279 t/v1_static_get_set.t
+SHA1 e852459088c5b8ba9a6fad7924c77069ac7f4f5f t/v1_static_hash.t
+SHA1 f0f6262d161e925eb0377c85265d7d6b320a0eff t/v1_static_list.t
+SHA1 c5da5042d76f898a7729f111e9c5ea2bcf888227 t/v1_tie_hash.t
+SHA1 6cac54dd84bb3dc2bba27a98cc63988eb1b47bb6 t/v1_tie_list.t
+SHA1 8289bad1b77581edb67b482f435dd2b6bd07e0e8 t/v1_tie_scalar.t
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.2.2 (GNU/Linux)
+Version: GnuPG v1.2.3 (GNU/Linux)
 
-iD8DBQE/YvR3V6eZRcV4WK0RAqJTAKCGzzcVmRIkSwS7lQ8sVkKMndW0OwCfUfj4
-TgV+nlwHpXoPXmjQ9tu/LG4=
-=ayJZ
+iD8DBQE/zJDIV6eZRcV4WK0RAoAhAKC6Wqy6q/W1pIHR6/hIOvSyhud7zACff1Ig
+23lXiwxmvqB41AHxGevAo60=
+=JgFm
 -----END PGP SIGNATURE-----
