@@ -6,8 +6,9 @@ package X;
 
 use Class::MethodMaker
   hash => [ qw / a b / ],
-  hash => 'c';
-sub new { bless {}, shift; }
+  hash => 'c',
+  new_hash_init => 'new';
+
 
 package main;
 
@@ -129,11 +130,16 @@ TEST {
   @l == 1;
 };
 
-# 26
+#26
 TEST {
   my $x = $o->a;
   my $y = $o->a;
   $x == $y;
+};
+
+#27
+TEST {
+  my $x = X->new(a => +{a => 1, b => 2});
 };
 
 exit 0;

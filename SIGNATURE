@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.33.
+signed via the Module::Signature module, version 0.38.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,26 +14,26 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 94eb0dc8b295e1ead3094a7aa8d9d2687f4726e2 Changes
+SHA1 12a91d7952ce922d7162dc3bf23cf2dd9148b537 Changes
 SHA1 efa8cb615886410be8de15f5a6925697f624d278 INSTALL
-SHA1 5645bd25175dcb642aa45bc21599566e8e15fe72 MANIFEST
+SHA1 ca30a7dbf1e081b5cadc648e12aa9f18a53999da MANIFEST
 SHA1 d0164da806f2157381c3614662b6afa8bc04a762 MANIFEST.SKIP
 SHA1 3c4550e3a86284b56fb30117ada7b6106fdbdc14 Makefile.PL
-SHA1 5a0c004ba97c9d046ab6e791a6ab4940e477e44c README
+SHA1 d56038cc296a6d4d1f73d776d4f933c7120fc883 README
 SHA1 bf8192c64eff9a9356b0e45ef812457c7d672883 TODO
 SHA1 c1fa07c05e01abd3456a21972ef20b5e0880bc4c benchmark/lexical.pl
 SHA1 7fd6930bf946850e2a8b0ad1d151066b6f72f581 cmmg.pl
 SHA1 a9d3eb3c3c292639d17d8fa09a9f4522f6beb684 components/CommonMethods.pm
 SHA1 4061ed676a452d5b50822aa0400289bdb31bbf88 components/array.m
-SHA1 9edef1c66f6112a63e1bc63989dcbfb06b8091fe components/hash.m
+SHA1 163b99bd4fdc818128b5736327724d421dc9549c components/hash.m
 SHA1 58f1ca40c4cd2a2b4056234ad3573bff511c2ee9 components/scalar.m
 SHA1 c908d3e65227e6bdaf61925ccbbb11caf098b44d configure
-SHA1 4d92bd340a187b361e11c7fc9790482f26390d12 end.pod
+SHA1 ff41a37084f5f8f73f34da34c07ec5ff499c4343 end.pod
 SHA1 d39160a9f9faf6a3036888015958afd5e6360dab examples/simple1
 SHA1 da39a3ee5e6b4b0d3255bfef95601890afd80709 lib/Class/.placeholder
-SHA1 218aec98ae97f469477f21d614ef09214acd3160 lib/Class/MethodMaker.pm
+SHA1 34fa858b735fb30cea6ffcf17c008f6792cd6ff8 lib/Class/MethodMaker.pm
 SHA1 e9cb30df1d39b6bf81a3eae841bba358220ae5b6 lib/Class/MethodMaker/Constants.pm
-SHA1 47b4948e9ed17605bb3fa7e0d755bfc8fc0087e6 lib/Class/MethodMaker/Engine.pm
+SHA1 1e532fe446faa80118775384be80e314c6e0b42d lib/Class/MethodMaker/Engine.pm
 SHA1 ae8200b36fec609638f4bb96cc520efca4c8a861 lib/Class/MethodMaker/OptExt.pm
 SHA1 39c250fa45a94a844a2a2109805d61305069492a lib/Class/MethodMaker/V1Compat.pm
 SHA1 aefdc0ff1ed174960178107a624fbde5caeb9c0e make-pm
@@ -43,6 +43,7 @@ SHA1 305049a080aee52255793b7d1d49185db456b5af t/basic.t
 SHA1 36f35089b3cdd95f16dcbe5f42c43e31182cbb88 t/diffclass.t
 SHA1 596533b56fe526b886a49cde6caa546c864cf48f t/hash.t
 SHA1 c1c5c7bc50fd8c72d33ecd3470a2217edd0241ab t/new.t
+SHA1 93a4a7b131af0dfa98ddad2a8f10eb376f9483e1 t/redefine-warnings.t
 SHA1 fe8e3e07688d65bdbc79cbf836dd6bb21574c4d9 t/scalar.t
 SHA1 15982417c01cf68495c17068f799a24c89168ef5 t/test.pm
 SHA1 732e5dd8fbc6e826bbc55f7366e74715fe8f8a47 t/test_v1.pm
@@ -54,7 +55,7 @@ SHA1 08dfb87c8814786b1cdb4bda436617ab1e05adaa t/v1_counter.t
 SHA1 076190c6d6a9273b86f561ac219a31999ef5d188 t/v1_get_concat.t
 SHA1 a8007cf6ff28e52f620e67eea63e5791bf72cfb3 t/v1_get_set.t
 SHA1 9e02f422261956fc72115eab034324701b89b11a t/v1_get_set_hi.t
-SHA1 0d84f480d66a70b24da7f2fafb8661a2a343c74a t/v1_hash.t
+SHA1 c23174e2c65cdb3f593266e6da1cfe5dcd7bb5f5 t/v1_hash.t
 SHA1 acc1ae131ed2f4693de9436d7d3a8042aaf0bc25 t/v1_key_attrib.t
 SHA1 6c8c3ed07bbd8a0bb4f45c87e11ed59e46301be3 t/v1_key_with_create.t
 SHA1 4a0ac1a705fa91436003226e13aa6dadfbfcc3e6 t/v1_list.t
@@ -75,9 +76,9 @@ SHA1 c5da5042d76f898a7729f111e9c5ea2bcf888227 t/v1_tie_hash.t
 SHA1 6cac54dd84bb3dc2bba27a98cc63988eb1b47bb6 t/v1_tie_list.t
 SHA1 8289bad1b77581edb67b482f435dd2b6bd07e0e8 t/v1_tie_scalar.t
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.2.3 (GNU/Linux)
+Version: GnuPG v1.2.2 (Darwin)
 
-iD8DBQE/zJDIV6eZRcV4WK0RAoAhAKC6Wqy6q/W1pIHR6/hIOvSyhud7zACff1Ig
-23lXiwxmvqB41AHxGevAo60=
-=JgFm
+iD8DBQFAb/+WV6eZRcV4WK0RAmCgAJ91wdwtOAgzeDNMw4fuAMeEaINARgCgwYIw
+5nM1K5v/U0PhPBI/FLc2weY=
+=11vl
 -----END PGP SIGNATURE-----

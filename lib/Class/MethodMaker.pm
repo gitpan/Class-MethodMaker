@@ -2,13 +2,13 @@
 
 package Class::MethodMaker;
 
-use Class::MethodMaker::Constants qw( INTEGER );
-use Class::MethodMaker::Engine;
+use Class::MethodMaker::Constants qw( );
 use base qw( Class::MethodMaker::Engine );
 
-our $VERSION = Class::MethodMaker::Engine->VERSION;
+# Make this line self-contained so MakeMaker can eval() it.
+our $VERSION = eval { require Class::MethodMaker::Engine; Class::MethodMaker::Engine->VERSION };
 
-sub INTEGER { Class::MethodMaker::Constants::INTEGER }
+sub INTEGER() { Class::MethodMaker::Constants::INTEGER() }
 
 1; # keep require happy
 

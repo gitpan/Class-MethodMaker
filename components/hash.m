@@ -110,6 +110,9 @@ sub hash {
   # Predefine keys for subs we always want to exist (because they're
   # referenced by other subs)
   my %names = map {; $_ => undef } qw( * *_set *_reset *_index *_each );
+  # The newer '*' treats a single +{} differently.  This is needed to ensure
+  # that hash_init works for v1 scenarios
+  $names{'='} = '*_v1compat' if $options->{v1_compat};
 
   return {
 
@@ -177,6 +180,7 @@ more efficient passing mechanism for large numbers of values.
                 %{%%STORAGE%%} = %%IFSTORE(%$v,@_[1..$#_])%%;
                 return;
               }
+
               if ( $want ) {
                 (%{%%STORAGE%%} = %%IFSTORE(%$v,@_[1..$#_])%%);
               } else {
@@ -197,10 +201,15 @@ more efficient passing mechanism for large numbers of values.
 
           '!*_v1compat' =>
           sub : method {
+            my $want = wantarray;
+
             if ( @_ == 1 ) {
               # No args
-              my $x = $names{'*'};
-              return $_[0]->$x();
+              return
+                unless defined $want;
+              %%STORAGE%% = +{}
+                unless exists %%STORAGE%%;
+              return $want ? %{%%STORAGE%%} : %%STORAGE%%;
             } elsif ( @_ == 2 ) {
               # 1 arg
               if ( my $type = ref $_[1] ) {
@@ -210,8 +219,7 @@ more efficient passing mechanism for large numbers of values.
                 } elsif ( $type eq 'HASH' ) {
                   my $x = $names{'*_set'};
                   $_[0]->$x(%{$_[1]});
-                  $x = $names{'*'};
-                  return $_[0]->$x();
+                  return $want ? %{%%STORAGE%%} : %%STORAGE%%;
                 } else {
                   # Not a recognized ref type for hash method
                   # Assume it's an object type, for use with some tied hash
@@ -231,7 +239,7 @@ more efficient passing mechanism for large numbers of values.
               my $x = $names{'*_set'};
               $_[0]->$x(@_[1..$#_]);
               $x = $names{'*'};
-              return $_[0]->$x();
+              return $want ? %{%%STORAGE%%} : %%STORAGE%%;
             }
           },
 

@@ -59,3 +59,4 @@ t/diffclass.t
 SIGNATURE
 INSTALL
 t/v1_boolean.t
+t/redefine-warnings.t
