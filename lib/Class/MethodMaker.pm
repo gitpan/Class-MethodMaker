@@ -62,7 +62,7 @@ use vars qw( @ISA );
 use Carp qw( carp cluck croak );
 
 use vars qw( $VERSION $PACKAGE );
-$VERSION = '1.05';
+$VERSION = '1.06';
 $PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------

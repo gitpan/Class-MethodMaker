@@ -1,5 +1,8 @@
 Revision history for Class-MethodMaker.
 
+1.06  Fri May 31  7:15AM GMT 2002
+	- Don't perform make self-checks by default
+
 1.05  Wed Feb  6  5:33PM GMT 2002
 	- Remove check for cut --version in make.pm on non-linux boxen
 

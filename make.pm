@@ -1,5 +1,9 @@
 # (X)Emacs mode: -*- cperl -*-
 
+use 5.005_62;
+use strict;
+use warnings;
+
 =head1 NAME
 
 make - tools for making makefiles with.
@@ -14,6 +18,11 @@ make - tools for making makefiles with.
      { name    => 'IPC::Run',
        package => 'IPC-Run',
        version => '0.44', },
+
+     { name     => 'DBI::Wrap',
+       package  => 'DBI-Wrap',
+       version  => '1.00',
+       optional => 1, },
     ];
 
   use constant EXEC_REQS =>
@@ -76,6 +85,15 @@ B<Optional> If supplied, the version of the module is checked against this
 number, and an exception raised if the version found is lower than that
 requested.
 
+=item optional
+
+B<Optional> If true, then failure to locate the package (or a suitable
+version) is not an error, but will generate a warning message.
+
+=item message
+
+If supplied, then this message will be given to the user in case of failure.
+
 =back
 
 =item EXEC_REQS
@@ -113,6 +131,15 @@ exit code to expect from the program when polling for its version number.
 Defaults to 0.  This is the exit code (value of C<$?> in the shell) to use,
 I<not> the value of the C<wait> call.
 
+=item optional
+
+B<Optional> If true, then failure to locate the package (or a suitable
+version) is not an error, but will generate a warning message.
+
+=item message
+
+If supplied, then this message will be given to the user in case of failure.
+
 =back
 
 =item NAME
@@ -139,12 +166,63 @@ normally the person primarily responsible for the upkeep of the module.
 A single (concise!) sentence describing the rough purpose of the module.  It
 is not expected to be mightily accurate, but is for quick browsing of modules.
 
+=item DEPENDS
+
+I<Optional>
+
+If defined, this must be an arrayref of additional targets to insert into
+F<Makefile>.  Each element must be a hashref, with the following keys:
+
+=over 4
+
+=item target
+
+Name of the rule target
+
+=item reqs
+
+Arrayref of rule requisites
+
+=item rules
+
+Arrayref of rule lines.  Do not precede these with a tab character; this will
+be inserted for you.  Likewise, do not break the lines up.
+
+=back
+
+E.g.,
+
+  use constant DEPENDS      => [
+                                { target => 'lib/Class/MethodMaker.pm',
+                                  reqs   => [qw/ cmmg.pl /],
+                                  rules  => [ '$(PERL) $< > $@' ],
+                                },
+                               ];
+
+=item DERIVED_PM
+
+I<Optional>.  If defined, this is expected to be an arrayref of file names
+(relative to the dist base), that are pm files to be installed.
+
+By default, F<make.pm> finds the pms to install by a conducting a C<find> over
+the F<lib> directory when C<perl Makefile.PL> is run.  However, for pm files
+that are created, that will be insufficient.  By specifying extras with this
+constant, such files may be named (and therefore made), and also cleaned when
+a C<make clean> is issued.  This might well be used in conjunction with the
+L<DEPENDS|"DEPENDS"> constant to auto-make pm files.
+
+E.g.,
+
+  use constant DERIVED_PM     => [qw( lib/Class/MethodMaker.pm )];
+
 =cut
 
 use Config                   qw( %Config );
 use Env                      qw( @PATH );
 use ExtUtils::MakeMaker 5.45 qw( WriteMakefile );
+use File::Find               qw( find );
 use File::Spec::Functions    qw( catfile );
+
 
 # Constants ---------------------------
 
@@ -206,8 +284,8 @@ sub warn_missing {
   my ($name_max) = sort { $b <=> $a } map length $_->{name}, @$missing;
 
   for (@$missing) {
-    my ($type, $name, $pkg, $vers, $pv) = @{$_}{qw( type name package
-                                                    vers_req vers_fnd )};
+    my ($type, $name, $pkg, $vers, $pv, $optional, $message) =
+      @{$_}{qw( type name package vers_req vers_fnd optional message )};
 
     if ( defined $pv ) {
       print STDERR sprintf("%-${type_max}s %${name_max}s requires version " .
@@ -221,6 +299,17 @@ sub warn_missing {
     print STDERR " (from $pkg)"
       if defined $pkg;
     print STDERR "\n";
+
+    print STDERR "  ...but this isn't fatal\n"
+      if $optional;
+
+    if ( defined $message ) {
+      $message =~ s/(^|\n)/$1    /g;
+      $message =~ s/([^\n])$/$1\n/;
+      print STDERR "\n";
+      print STDERR $message;
+      print STDERR "\n";
+    }
   }
 }
 
@@ -240,6 +329,8 @@ sub check {
       for grep ! exists $item->{$_}, keys %$defaults;
     my ($name, $pkg, $vers, $vopt, $vexpect) =
       @{$item}{qw( name package version vopt vexpect)};
+    # Handle multiple '.'s in versions
+    defined $vers && $vers  =~ s!\.(\d+)\.!.$1!g;
 
     printf STDERR "Checking for %${type_max}s %s...", $type, $name
       if $verbose;
@@ -255,6 +346,8 @@ sub check {
                          package  => $pkg,
                          vers_req => $vers,
                          vers_fnd => $vfound,
+                         optional => $item->{optional},
+                         message  => $item->{message},
                        }
           if $vers > $vfound;
       }
@@ -265,6 +358,8 @@ sub check {
                        name     => $name,
                        package  => $pkg,
                        vers_req => $vers,
+                       optional => $item->{optional},
+                       message  => $item->{message},
                      };
     }
   }
@@ -276,46 +371,51 @@ sub check {
 
 # Self Test
 
-# Find Module (no version)
-check([{ name => 'integer' , type => TYPE_MOD, }])
-  and die "Internal Check (1) failed\n";
-# Fail module (no version)
-check([{ name => 'flubble' , type => TYPE_MOD, }])
-  or die "Internal Check (2) failed\n";
-# Find module, wrong version
-check([{ name => 'IO'      , type => TYPE_MOD, version => '100.0', }])
-  or die "Internal Check (3) failed\n";
-# Find module, right version
-check([{ name => 'IO'      , type => TYPE_MOD, version => '1.00',  }])
-  and die "Internal Check (4) failed\n";
+if ( $ENV{MAKE_SELF_TEST} ) {
+  # Find Module (no version)
+  check([{ name => 'integer' , type => TYPE_MOD, }])
+    and die "Internal Check (1) failed\n";
+  # Fail module (no version)
+  check([{ name => 'flubble' , type => TYPE_MOD, }])
+    or die "Internal Check (2) failed\n";
+  # Find module, wrong version
+  check([{ name => 'IO'      , type => TYPE_MOD, version => '100.0', }])
+    or die "Internal Check (3) failed\n";
+  # Find module, right version
+  check([{ name => 'IO'      , type => TYPE_MOD, version => '1.00',  }])
+    and die "Internal Check (4) failed\n";
 
-# Find exec (no version)
-  # Use more (common to dog/windoze too!) (mac?)
-check([{ name => 'more'    , type => TYPE_EXEC, }])
-  and die "Internal Check (5) failed\n";
-# Fail exec (no version)
-check([{ name => ' wibwib' , type => TYPE_EXEC, }])
-  or die "Internal Check (6) failed\n";
+  # Find exec (no version)
+    # Use more (common to dog/windoze too!) (mac?)
+  check([{ name => 'more'    , type => TYPE_EXEC, }])
+    and die "Internal Check (5) failed\n";
+  # Fail exec (no version)
+  check([{ name => ' wibwib' , type => TYPE_EXEC, }])
+    or die "Internal Check (6) failed\n";
 
-# Could do with one that works on dog/windoze/mac/bsd unix...
-if ( $Config{osname} eq 'linux' ) {
-  # Find exec, wrong version
-  check([{ name => 'cut'     , type => TYPE_EXEC,
-           version => '100.0', vopt => '--version', }])
-    or die "Internal Check (7) failed\n";
-  # Find exec, right version
-  check([{ name => 'cut'     , type => TYPE_EXEC,
-           version => '1.0', vopt => '--version', }])
-    and die "Internal Check (8) failed\n";
+  # Could do with one that works on dog/windoze/mac...
+  if ( $Config{osname} eq 'linux' ) {
+    # Find exec, wrong version
+    check([{ name => 'cut'     , type => TYPE_EXEC,
+             version => '100.0', vopt => '--version', }])
+      or die "Internal Check (7) failed\n";
+    # Find exec, right version
+    check([{ name => 'cut'     , type => TYPE_EXEC,
+             version => '1.0', vopt => '--version', }])
+      and die "Internal Check (8) failed\n";
+  }
 }
 
 # -------------------------------------
 
 my @missing;
 
-die "$_ not defined\n"
-  for grep ! defined *$_{CODE}, qw( MOD_REQS EXEC_REQS
-                                    NAME VERSION_FROM AUTHOR ABSTRACT );
+{
+  no strict 'refs';
+  die "$_ not defined\n"
+    for grep ! defined *$_{CODE}, qw( MOD_REQS EXEC_REQS
+                                      NAME VERSION_FROM AUTHOR ABSTRACT );
+}
 
 die sprintf(<<'END', NAME) unless NAME =~ /^[A-Za-z0-9-]+$/;
 The module name:%s: is illegal (letters, numbers & hyphens only, please)
@@ -326,26 +426,67 @@ $_->{type} = TYPE_MOD
 $_->{type} = TYPE_EXEC
   for @{EXEC_REQS()};
 
-push @missing, check(MOD_REQS, 1), check(EXEC_REQS, 1)
-  # We're at the top level, so caller is defined only if we're being read in
-  # from another perl program.  If so, don't perform the checks, to avoid
-  # unwanted output.  An example such program is one that reads this file to
-  # gather package info.
-  unless defined caller;
+push @missing, check(MOD_REQS, 1), check(EXEC_REQS, 1);
 
 warn_missing(\@missing);
 
 exit 2
-  if @missing;
+  for grep ! $_->{optional}, @missing;
 
-WriteMakefile
+my %pm;
+find (sub {
+        return unless /\.pm$/;
+        (my $target = $File::Find::name) =~
+          s/^$File::Find::topdir/\$(INST_LIBDIR)/;
+        $pm{$File::Find::name} = $target;
+      },
+      'lib');
+
+sub MY::postamble {
+  <<EOF;
+check: test
+EOF
+}
+
+my %Config =
   (NAME         => NAME,
    VERSION_FROM => VERSION_FROM,
    AUTHOR       => AUTHOR,
    ABSTRACT     => ABSTRACT,
-   PREREQ_PM    => { map (($_->{name} => $_->{version} || 0 ), @{MOD_REQS()})},
+   PREREQ_PM    => { map (($_->{name} => $_->{version} || 0 ),
+                          grep ! $_->{optional}, @{MOD_REQS()})},
+   PM           => \%pm,
    EXE_FILES    => [ grep !/(?:CVS|~)$/, glob catfile (qw( bin * )) ],
   );
+
+if ( defined *DEPENDS{CODE} ) {
+  my $depends = *DEPENDS{CODE}->();
+  my %depends;
+  for (@$depends) {
+    my ($target) = $_->{target};
+    my ($reqs)   = $_->{reqs};
+    my ($rules)  = $_->{rules};
+
+    $depends{$target} = join("\n\t", join(' ', @$reqs), @$rules) . "\n";
+  }
+  $Config{depend} = \%depends;
+}
+
+if ( defined *DERIVED_PM{CODE} ) {
+  my $extra = *DERIVED_PM{CODE}->();
+  die sprintf "Don't know how to handle type: %s\n", ref $extra
+    unless UNIVERSAL::isa($extra, 'ARRAY');
+
+  for (@$extra) {
+    $Config{PM}->{$_} = catfile '$(INST_LIBDIR)', $_;
+    push @{$Config{clean}->{FILES}}, $_;
+  }
+}
+
+$Config{clean}->{FILES} = join ' ', @{$Config{clean}->{FILES}}
+  if exists $Config{clean};
+
+WriteMakefile (%Config);
 
 # ----------------------------------------------------------------------------
 
