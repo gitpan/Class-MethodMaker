@@ -141,10 +141,10 @@ is not expected to be mightily accurate, but is for quick browsing of modules.
 
 =cut
 
+use Config                   qw( %Config );
 use Env                      qw( @PATH );
 use ExtUtils::MakeMaker 5.45 qw( WriteMakefile );
 use File::Spec::Functions    qw( catfile );
-
 
 # Constants ---------------------------
 
@@ -296,15 +296,18 @@ check([{ name => 'more'    , type => TYPE_EXEC, }])
 # Fail exec (no version)
 check([{ name => ' wibwib' , type => TYPE_EXEC, }])
   or die "Internal Check (6) failed\n";
-# Find exec, wrong version
-  # Could do with one that works on dog/windoze/mac...
-check([{ name => 'cut'     , type => TYPE_EXEC,
-         version => '100.0', vopt => '--version', }])
-  or die "Internal Check (7) failed\n";
-# Find exec, right version
-check([{ name => 'cut'     , type => TYPE_EXEC,
-         version => '1.0', vopt => '--version', }])
-  and die "Internal Check (8) failed\n";
+
+# Could do with one that works on dog/windoze/mac/bsd unix...
+if ( $Config{osname} eq 'linux' ) {
+  # Find exec, wrong version
+  check([{ name => 'cut'     , type => TYPE_EXEC,
+           version => '100.0', vopt => '--version', }])
+    or die "Internal Check (7) failed\n";
+  # Find exec, right version
+  check([{ name => 'cut'     , type => TYPE_EXEC,
+           version => '1.0', vopt => '--version', }])
+    and die "Internal Check (8) failed\n";
+}
 
 # -------------------------------------
 

@@ -22,6 +22,10 @@ t/static_get_set.t
 t/static_hash.t
 t/struct.t
 t/tie_hash.t
+t/object_tie_list.t
+t/object_tie_hash.t
+t/tie_list.t
+t/tie_scalar.t
 Changes
 Makefile.PL
 TODO
