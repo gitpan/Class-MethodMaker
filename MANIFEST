@@ -33,6 +33,13 @@ lib/Class/MethodMaker.pm
 README
 MANIFEST
 MANIFEST.SKIP
-make.pm
+make-pm
 t/static_list.t
 t/get_set_hi.t
+Build.PL
+META.yml
+configure
+t/new_hash_with_init.t
+t/singleton.t
+SIGNATURE
+t/0-signature.t

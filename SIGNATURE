@@ -1,0 +1,67 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.33.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It would check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 511386b69bc0414454a526d105f550f5ef3a24b0 Build.PL
+SHA1 4ec5c190a0b45236e4b3cd1b8ca4e3000804d658 Changes
+SHA1 45c7607803392ef0c87b789b04e2ad0b34e8bf6c MANIFEST
+SHA1 0b7da277e1cda31ab7dfb7b42e45ba2d77714410 MANIFEST.SKIP
+SHA1 ef1bac8c3969350c961ee0f24b6e03b0e8e37a33 META.yml
+SHA1 6bcfb4376e293f6b34ac30cc108c0f37cbaefada Makefile.PL
+SHA1 4487733eac26039e6e1ff0ef8fda494382d1019b README
+SHA1 3e10a9b0f6c84181eb5c3be23a907d53c9634a5e TODO
+SHA1 8234e2d30df5aa5c4f2bc919adc55035fd74b388 configure
+SHA1 bd78a52cc8d22bda9c846316d9ccde70309ca7ee lib/Class/MethodMaker.pm
+SHA1 30599c2402ca6812a360a88480b0cd6b4961f19a make-pm
+SHA1 e7569e5eeef2a8558e6d4828be087a6e1a841295 t/0-signature.t
+SHA1 ed6d96541370e5d2ebbd8bc661e93cac8f563246 t/Test.pm
+SHA1 b69bae54b463a897afacbd121eb376cb79b930ee t/abstract.t
+SHA1 a2a20b10cecfbcfe8f7cf47fe9f924f16bb669d3 t/boolean.t
+SHA1 f9c0d4db7aa3324eaca83755303d32aebc6481f6 t/code.t
+SHA1 d8055b5e06e7ddfa35bdf8e3284357400f68fc89 t/copy.t
+SHA1 4569507a0459c9d16e5ff6bb60c54523d22829d9 t/counter.t
+SHA1 56e4a76141c827d4d111dd2087019327650fe4d3 t/find_test
+SHA1 7f62ab6b2502de460ffa7284121d6b8db8d4c996 t/get_concat.t
+SHA1 603d52fc1937a8c6db828439e848b5f155073da8 t/get_set.t
+SHA1 0770f39a24ad79cee01d8a9f0c6baabb32c6028f t/get_set_hi.t
+SHA1 5fdfcb1f59e5eab52e621bf715e9d7e66ef38002 t/grouped_fields.t
+SHA1 b20c0287ec988f204e476f55d27fd1e64f87e30b t/hash.t
+SHA1 f535f41535ea4fa00283cb11aa3aaef7b6acfa11 t/hash_of_lists.t
+SHA1 80e867179aa4df9135d278f156036bad17f72284 t/key_attrib.t
+SHA1 01d045c3cbf462480a5d755fc47e279a5d469238 t/key_with_create.t
+SHA1 55a9d17cf34c8a041a064b7ecac78634ad38608f t/list.t
+SHA1 59de988a23c56cdf843c74d251494c1f91ef0d7f t/listed_attrib.t
+SHA1 59286d2b0f19d92b9f787d242f7dbd79c6a28d5f t/method.t
+SHA1 d63ff984a5c020a315462b492f2b8bbd69f03232 t/new.t
+SHA1 0681c6255d78f3342cb4fcbaa2004fb5563cd2c4 t/new_hash_with_init.t
+SHA1 f497a85cc41e30cc0127a57d2ca11667a0f012c9 t/object.t
+SHA1 ca8cfb2b32254763273cf60a680f4c41b82ad288 t/object_list.t
+SHA1 90b752577a39679a2e9fa1b33951768e7d1fe3ea t/object_tie_hash.t
+SHA1 ffaa35ccf3423fe162808a11f800e97ff9ca5df0 t/object_tie_list.t
+SHA1 c9f818ff4db09056285b9700ad652a4ed9e51147 t/singleton.t
+SHA1 5e98104b3f2e5966134fdf55dc8f364fdb878af6 t/static_get_set.t
+SHA1 b869becc0d0fdb54cc0bb34223de8cd113b2a2b8 t/static_hash.t
+SHA1 3bf8fba583d346aae775f96281ecdd7d5577532f t/static_list.t
+SHA1 abe2f44d3ca8bb135e04f0ee94f5740440c7328b t/struct.t
+SHA1 58e33afe861b5a9ef3a50d17abc09a063b1ce88f t/tie_hash.t
+SHA1 0fc811ee17166e9de41e09bfe82488885a693fc4 t/tie_list.t
+SHA1 3f6e54aa125bd1206c9a76c0f9df4293b1300a87 t/tie_scalar.t
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.2.2 (GNU/Linux)
+
+iD8DBQE/OhvPV6eZRcV4WK0RAumJAKCipPPZ4QrmYb56jXegIzW/GFdsSgCgvZG/
+wBubzgwH+I6ahZbXuCxU93E=
+=VizJ
+-----END PGP SIGNATURE-----

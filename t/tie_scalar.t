@@ -58,10 +58,10 @@ use Class::MethodMaker
   new => 'new';
 
 package main;
-use ExtUtils::testlib;
-
 use lib qw ( ./t );
 use Test;
+
+use ExtUtils::testlib;
 
 my $o = new X;
 

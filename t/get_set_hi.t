@@ -11,13 +11,12 @@ use Class::MethodMaker
   ;
 
 package main;
+use lib qw ( ./t );
+use Test;
 
 my $p = Person->new(name   =>'Homer',
                     size   =>'54', 
                     Status =>'Comical Moron');
-
-use lib qw ( ./t );
-use Test;
 
 TEST { 1 };
 TEST { $p->name eq 'Homer'          };
@@ -25,4 +24,3 @@ TEST { $p->size == 54               };
 TEST { $p->getStatus eq 'Comical Moron' };
 
 exit 0;
-

@@ -7,9 +7,6 @@ sub id { shift->{id}; }
 
 package X;
 
-use lib qw ( ./t );
-use Test;
-
 use Class::MethodMaker
   object_list  => [
 		   'Y' => { slot => 'a', comp_mthds => 'id' },
@@ -17,6 +14,10 @@ use Class::MethodMaker
 
 sub new { bless {}, shift; }
 my $o = new X;
+
+package main;
+use lib qw ( ./t );
+use Test;
 
 # 1
 TEST { 1 };
@@ -39,7 +40,7 @@ TEST { $a = 1; for ($o->a) { $a &&= ( ref ($_) eq 'Y' ) }; $a };
 # 13-15
 TEST { join (' ', $o->id) eq '3 2' };
 TEST { ref($o->a_index(0)) eq 'Y' };
-TEST { $o->a_set(0 => Y->new) };
+TEST { $o->a_set(0 => Y->new); 1 };
 # 16-17
 TEST { $o->a_index(0)->id == 4};
 TEST { @b = $o->a; @b == 2 };
@@ -66,7 +67,7 @@ TEST { $a = 1; for ($o->a) { $a &&= ( ref ($_) eq 'Y' ) }; $a };
 TEST { join (' ', $o->id) eq '8 7' };
 # 31-33
 TEST { ref($o->index_a(0)) eq 'Y' };
-TEST { $o->set_a(0 => Y->new) };
+TEST { $o->set_a(0 => Y->new); 1 };
 TEST { $o->a_index(0)->id == 9};
 # 34
 TEST { @b = $o->a; @b == 2 };

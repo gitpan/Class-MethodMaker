@@ -11,9 +11,6 @@ sub bar {
 
 package X;
 
-use lib qw ( ./t );
-use Test;
-
 use Class::MethodMaker
   object  => [
 	      'Y' => 'a',
@@ -31,6 +28,11 @@ use Class::MethodMaker
 	     ];
 
 sub new { bless {}, shift; }
+
+package main;
+use lib qw ( ./t );
+use Test;
+
 my $o = new X;
 
 TEST { 1 };

@@ -37,7 +37,7 @@ sub bar {
   $self->{'bar'};
 }
 
-package main ;
+package main;
 use lib qw ( ./t );
 use Test;
 

@@ -7,8 +7,6 @@ sub foo { $_[0]->{foo} = $_[1] if $#_; $_[0]->{foo} }
 
 package X;
 
-use lib qw ( ./t );
-use Test;
 use Tie::RefHash;
 
 use Class::MethodMaker
@@ -24,6 +22,11 @@ use Class::MethodMaker
 	      ];
 
 sub new { bless {}, shift; }
+
+package main;
+use lib qw ( ./t );
+use Test;
+
 my $o = new X;
 
 TEST { 1 };

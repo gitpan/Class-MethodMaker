@@ -9,3 +9,5 @@
 ^MANIFEST.bak$
 ^Proposal.pod$
 ^*~$
+^INFO.yaml$
+^make.pm$

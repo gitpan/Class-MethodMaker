@@ -2,14 +2,15 @@
 
 package X;
 
-use lib qw ( ./t );
-use Test;
-
 use Class::MethodMaker
   list => [ qw / a b / ],
   list => 'c';
 
 sub new { bless {}, shift; }
+
+package main;
+use lib qw ( ./t );
+use Test;
 my $o = new X;
 
 # 1--6
@@ -43,7 +44,7 @@ TEST {
 
 # 10--12
 TEST { ref $o->b_ref eq 'ARRAY' };
-TEST { ! scalar @{$o->clear_b} };
+TEST { $o->clear_b; 1 };
 TEST { ! scalar @{$o->b} };
 
 $o->b_unshift (qw/ a b c /);

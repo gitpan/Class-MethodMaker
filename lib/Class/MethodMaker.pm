@@ -62,7 +62,7 @@ use vars qw( @ISA );
 use Carp qw( carp cluck croak );
 
 use vars qw( $VERSION $PACKAGE );
-$VERSION = '1.10';
+$VERSION = '1.11';
 $PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------
@@ -347,7 +347,92 @@ sub new_hash_init {
 
 # ----------------------------------------------------------------------------
 
-=head2 new_with_args
+=head2 new_hash_with_init
+
+Combines new_hash_init with new_with_init; arguments passed in are first
+passed to assignment methods as with new_hash_init, and then the class method
+'init' (which must be defined by the client is called, with those arguments.
+Note that unlike L<new_with_init|new_with_init>, the arguments are pre-munged
+--- if a single argument is a hashref is passed in, it is expanded out, the
+the key/value pairs (whether originally as a hash ref or a list) may be
+reordered as typically occurs with perl hashes.
+
+=cut
+
+sub new_hash_with_init {
+  my ($self, @args) = @_;
+  my %methods;
+
+  foreach (@args) {
+    $methods{$_} = sub {
+      my $class = shift;
+      my $self = ref ($class) ? $class : bless {}, $class;
+      my %args = (scalar @_ == 1 and ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_;
+
+      foreach (keys %args) {
+        if ( my $setter = $self->can(" __CMM__ $_") ) {
+          $setter->($self, $args{$_});
+        } else {
+          $self->$_($args{$_});
+        }
+      }
+
+      $self->init(%args);
+      $self;
+    };
+  }
+
+  $self->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------------
+
+=head2 singleton
+
+Creates a basic constructor which only ever returns a single instance of the
+class: i.e., after the first call, repeated calls to this constructor return
+the I<same> instance.  Note that the instance is instantiated at the time of
+the first call, not before.
+
+Any arguments are treated as for new_hash_init.
+
+Naturally, C<init> and any initializer methods are called only by the first
+invocation of this method.
+
+This method should be called only as a class method.
+
+=cut
+
+sub singleton {
+  my ($self, @args) = @_;
+  my %methods;
+
+  my $singleton;
+  foreach (@args) {
+    $methods{$_} = sub {
+      return $singleton
+        if defined $singleton;
+      my $class = shift;
+      $singleton = bless {}, $class;
+
+      my %args = (scalar @_ == 1 and ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_;
+      foreach (keys %args) {
+        if ( my $setter = $singleton->can(" __CMM__ $_") ) {
+          $setter->($singleton, $args{$_});
+        } else {
+          $singleton->$_($args{$_});
+        }
+      }
+      $singleton->init(%args);
+      return $singleton;
+    };
+  }
+  $self->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------------
+
+=head2 EXPERIMENTAL: new_with_args
 
 Creates a basic constructor.
 
@@ -575,21 +660,13 @@ sub _make_get_set {
   if ( $static ) {
     my $store;
     $pgsetter = sub {
-      my $self = shift;
-      if ( @_ ) {
-	$store = shift;
-      } else {
-	$store;
-      }
+      return $store if @_ == 1;
+      return $store = $_[1];
     };
   } else {
     $pgsetter = sub {
-      my $self = shift;
-      if ( @_ ) {
-	$self->{$slot} = shift;
-      } else {
-	$self->{$slot};
-      }
+      return $_[0]->{$slot} if @_ == 1;
+      return $_[0]->{$slot} = $_[1];
     };
   }
 
@@ -1755,7 +1832,12 @@ sub list {
 
 # -------------------------------------
 
-#DOCUMENT
+=head2 static_list
+
+As for L<list|list>, but the value of the component is shared across all
+instances of your object in your process.
+
+=cut
 
 sub static_list {
   my ($class, @args) = @_;
@@ -1767,6 +1849,10 @@ sub static_list {
 
     $methods{$field} =
       sub {
+        my $class = shift;
+        my @list = @_;
+        @storage =  map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list
+          if @list;
         return wantarray ? @storage : \@storage;
       };
 
@@ -1778,9 +1864,7 @@ sub static_list {
 
   $methods{"${field}_push"} =
       sub {
-        my $class = shift;
-        my @values = @_;
-        push @storage, @values;
+        push @storage, @_[1..$#_];
       };
 
   $methods{"${field}_shift"} =
@@ -2898,7 +2982,7 @@ sub counter {
 
 # ----------------------------------------------------------------------
 
-=head2 EXPERIMENTAL: copy
+=head2 copy
 
 Produce a copy of self.  The copy is a *shallow* copy; any references
 will be shared by the instance upon which the method is called and the
@@ -2916,6 +3000,43 @@ sub copy {
     $methods{$name} = sub {
       my $self = shift; my $class = ref $self;
       return bless { %$self }, $class;
+    };
+  }
+
+  $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------
+
+=head2 deep_copy
+
+Produce a copy of self.  The copy is a *deep* copy; any references will be
+recursively copied value-by-value from the instance upon which the method is
+called into the returned newborn.  Note that this copying does not support the
+copying of coderefs, ties or XS-based objects.
+
+=cut
+
+sub deep_copy {
+  my ($class, @args) = @_;
+  my %methods;
+
+  eval 'use Storable;';
+  eval 'use Data::Dumper;' if $@;
+
+  foreach (@args) {
+    my $name = $_;
+
+    $methods{$name} = sub {
+      my $self = shift; my $class = ref $self;
+
+      if ( Storable->VERSION ) {
+        return Storable::dclone $self;
+      } else {
+        my $copy;
+        eval Data::Dumper->Dump([$self],['copy']);
+        return $copy;
+      }
     };
   }
 
@@ -2969,6 +3090,13 @@ will be passed to install_methods --- so in the above, the line
 could be replaced with
 
     return %methods
+
+If intend to publish your meta-methods, consider doing so on CPAN, the
+Comprehensive Perl Archive Network at http://www.cpan.org .  If your
+meta-methods are generic and potentially useful to a large number of other
+C::MM users (as distinct from an application-specific subset), please contact
+the authour of this module at fluffy@cpan.org to discuss integrating those
+methods with this module.
 
 =cut
 

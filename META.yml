@@ -1,0 +1,29 @@
+--- #YAML:1.0
+name: Class-MethodMaker
+version: 1.11
+license: perl
+distribution_type: module
+requires: {}
+recommends: {}
+build_requires: {}
+conflicts: {}
+provides:
+  Class::MethodMaker:
+    file: lib/Class/MethodMaker.pm
+    version: 1.11
+  Class::MethodMakerSubclass:
+    file: lib/Class/MethodMaker.pm
+    version: 1.11
+  Person:
+    file: lib/Class/MethodMaker.pm
+    version: 1.11
+  Simple:
+    file: lib/Class/MethodMaker.pm
+    version: 1.11
+  Stat:
+    file: lib/Class/MethodMaker.pm
+    version: 1.11
+  main:
+    file: lib/Class/MethodMaker.pm
+    version: 1.11
+generated_by: Module::Build version 0.19

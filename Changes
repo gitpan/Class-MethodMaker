@@ -1,6 +1,30 @@
 Revision history for Class-MethodMaker.
 
-1.10  Sat Jan 25  3:59PM GMT 2002
+1.11  Tue Aug 12 5:43PM GMT
+	- Integrate new build system supporting ExtUtils::MakeMaker with simple
+	  Makefile.PL, ExtUtils::MakeMaker with configure, and Module::Build.
+	- Integrate use of Module::Signature
+	- Optimize get_set 'x'.  Code contributed by Sam Tregar 
+	  <sam@tregar.com>
+	- Add new_hash_with_init
+          Code adapted from Class::MethodMaker::Util, written by
+          Marcel Gruenauer <marcel@noug.at>
+	- Add singleton & tests
+          Code adapted from Class::MethodMaker::Util, written by
+          Marcel Gruenauer <marcel@noug.at>
+	- Add deep_copy.
+	  Patch based on code supplied by Matthew Persico
+          <matthew.persico@lazard.com>
+	- Make copy non-experimental
+	- Make new_with_args experimental (it always should've been marked as
+	  such)
+	- Document static_list
+	- Correct static_list assignment on method 'x'
+	  Patch based on code supplied by Matthew Persico
+          <matthew.persico@lazard.com>
+	- Add extra tests for static_list assignment
+
+1.10  Sat Jan 25  3:59PM GMT 2003
 	- Add patch to maintain internal storage reference of 'list'.
 	  Patch courtesy of Dominique Dumont <domi@komarr.grenoble.hp.com>
 	- Improve documentation of 'list' 'x' me

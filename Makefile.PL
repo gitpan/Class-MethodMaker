@@ -1,19 +1,17 @@
 require 5.00307;
+use strict;
 
-use File::Spec;
-sub catfile { File::Spec->catfile(@_) }
+use ExtUtils::MakeMaker;
 
-use constant MOD_REQS =>
-  [
-  ];
-
-use constant EXEC_REQS =>
-  [
-  ];
-
-use constant NAME         => 'Class-MethodMaker';
-use constant VERSION_FROM => catfile (qw( lib Class MethodMaker.pm ));
-use constant AUTHOR       => 'Martyn J. Pearce fluffy@cpan.org';
-use constant ABSTRACT     => 'a module for creating generic methods';
-
-use make;
+WriteMakefile (
+  NAME         => 'Class-MethodMaker',
+  VERSION      => '1.11',
+  AUTHOR       => 'Martyn J. Pearce ',
+  ABSTRACT     => 'a module for creating generic methods',
+  PREREQ_PM    => +{ },
+  EXE_FILES    => [ ],
+  # Need this to stop Makefile treating Build.PL as a producer of Build as a
+  # target for 'all'.
+  PL_FILES     => +{},
+  clean        => +{ FILES => qw( Build _build ) },
+);

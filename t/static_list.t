@@ -2,15 +2,18 @@
 
 package X;
 
-use lib qw ( ./t );
-use Data::Dumper;
-use Test;
-
 use Class::MethodMaker
   static_list => [ qw / a b / ],
   static_list => 'c';
 
 sub new { bless {}, shift; }
+
+package main;
+use lib qw ( ./t );
+use Test;
+
+use Data::Dumper;
+
 my $o = new X;
 my $o2 = new X;
 
@@ -72,7 +75,16 @@ eval {
 };
 # 20--21
 TEST { $@ };
-TEST { $o->a eq $o2->a };
+TEST { ($o->b)[0] eq ($o2->b)[0] };
 
+eval {
+  $o->b ( 'e' );
+};
+# 22--26
+TEST { ! $@ };
+TEST { ($o->b)[0] eq 'e' };
+TEST { (my @a = $o->b) == 1 };
+TEST { ($o2->b)[0] eq 'e' };
+TEST { (my @a = $o2->b) == 1 };
 exit 0;
 

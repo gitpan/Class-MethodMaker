@@ -2,14 +2,15 @@
 
 package X;
 
-use lib qw ( ./t );
-use Test;
-
 use Class::MethodMaker
   hash => [ qw / a b / ],
   hash => 'c';
-
 sub new { bless {}, shift; }
+
+package main;
+use lib qw ( ./t );
+use Test;
+
 my $o = new X;
 
 # 1--7
@@ -110,7 +111,7 @@ TEST {
 TEST {
   $o->a_clear;
   my @a_keys = $o->a_keys;
-  @a == 0;
+  @a_keys == 0;
 };
 
 #24

@@ -2,14 +2,16 @@
 
 package X;
 
-use lib qw ( ./t );
-use Test;
-
 use Class::MethodMaker
   static_hash => [ qw / a b / ],
   static_hash => 'c';
 
 sub new { bless {}, shift; }
+
+package main;
+use lib qw ( ./t );
+use Test;
+
 my $o = new X;
 my $o2 = new X;
 
@@ -72,7 +74,11 @@ TEST {
 TEST { ! defined $o->c('foo') };
 TEST { defined $o->c };
 
-TEST { $o->a eq $o2->a };
+TEST {
+  my @a  = $o->a;
+  my @a2 = $o2->a;
+  (@a == @a2) &&
+    ! grep $a[$_] ne $a2[$_], 0..$#a;
+};
 
 exit 0;
-
