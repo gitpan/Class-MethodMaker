@@ -232,7 +232,7 @@ TEST {
   $b[2] eq 'jimbob';
 };
 TEST {
-  ( ( ! $^V or $^V lt v5.6.0  or eval 'exists $b[3]' ) and
+  ( ! $^V or $^V lt v5.6.0  or eval 'exists $b[3]' ) and
     ! defined $b[3];
 };
 
