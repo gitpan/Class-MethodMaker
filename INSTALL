@@ -1,21 +1,18 @@
 To install this module, use
 
-  ./configure
-  make
-  make test
-  make install
+  perl Build.PL
+  ./Build
+  ./Build test
+  ./Build install
 
-This will install using /usr/bin/perl .  If you wish to install using the perl
-in your PATH, use 'perl ./configure' instead of 'configure'.
-
-If you wish to install to a non-standard location, use 'configure
---prefix=location' instead of 'configure'.
+If you wish to install to a non-standard location, use 'perl Build.PL
+destdir=location' instead of 'perl Build.PL'.
 
 So, to use the perl in your PATH to install to '/tmp', use
 
-  perl ./configure --prefix=/tmp
-  make
-  make test
-  make install
+  perl Build.PL destdir=/tmp
+  ./Build
+  ./Build test
+  ./Build install
 
 Enjoy.
