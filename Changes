@@ -1,13 +1,5 @@
 Revision history for Class-MethodMaker.
 
-1.04  Wed Jan 30  4:13PM GMT 2002
-	- Add tie_scalar, tie_list, object_tie_list, object_tie_hash,
-	  new_with_args methods (Courtesy of Dominique Dumont, Hewlett-Packard
-	  Company).
-	- Factorize accessor creation in _add_list_methods and
-	  _add_hash_methods (Courtesy of Dominique Dumont, Hewlett-Packard
-	  Company).
-
 1.03  Wed Jan 30  1:05PM GMT 2002
 	- Fix bug in t/hash_of_lists.t that assumed key order of hash
 	  (Courtesy of Bjoern Kriews)
