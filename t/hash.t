@@ -115,7 +115,7 @@ TEST {
 
 #24
 TEST {
-  $o->a (a => 1);
+  $o->a ('a' => 1);
   my @l = keys %{$o->a};
   $l[0] eq 'a'
 };

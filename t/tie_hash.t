@@ -14,12 +14,12 @@ use Tie::RefHash;
 use Class::MethodMaker
   tie_hash => [
 	       a => {
-		     tie	=> qw/ Tie::RefHash /,
-		     args => [],
+		     'tie'	=> qw/ Tie::RefHash /,
+		     'args' => [],
 		    },
 	       b => {
-		     tie	=> qw/ Tie::RefHash /,
-		     args => [],
+		     'tie'	=> qw/ Tie::RefHash /,
+		     'args' => [],
 		    },
 	      ];
 

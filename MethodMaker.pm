@@ -1,7 +1,7 @@
 package Class::MethodMaker;
 
 #
-# $Id: MethodMaker.pm,v 1.35 2000/06/01 18:00:50 recoil Exp $
+# $Id: MethodMaker.pm,v 1.44 2000/06/07 06:11:45 recoil Exp $
 #
 
 # Copyright (c) 2000 Martyn J. Pearce.  This program is free software;
@@ -84,12 +84,12 @@ use vars '@ISA';
 
 =head1 VERSION
 
-Class::MethodMaker v0.95
+Class::MethodMaker v0.96
 
 =cut
 
 use vars '$VERSION';
-$VERSION = "0.95";
+$VERSION = "0.96";
 
 # ----------------------------------------------------------------------
 
@@ -333,13 +333,11 @@ Returns (new) value.
 
 Value defaults to undef.
 
-=item   COMPATIBILITY: clear_x
+=item   clear_x
 
-Sets value to undef.  This method is present purely for backward
-compatibility.  Please use
+Sets value to undef.  This is exactly equivalent to
+
   $foo->x (undef)
-
-instead.  I<This method will disappear from the default in time>.
 
 No return.
 
@@ -376,8 +374,7 @@ to undef.  Use this to ensure backward compatibility.
 
 =item	-noclear
 
-Creates x (as per the default) only.  I<This will become the default in
-time>.
+Creates x (as per the default) only.
 
 =back
 
@@ -492,8 +489,7 @@ sub get_set {
 
   # @template is a list of pattern names for the methods.
   # Postions are perl:get/set, clear, get, set
-  # Compatibility default.  Compatibility deprecated in 0.95 (1.vi.00)
-  my $template = GS_PATTERN_MAP->{'compatibility'};
+  my $template = ${GS_PATTERN_MAP()}{'compatibility'};
 
   my $arg;
   foreach $arg (@args) {
@@ -512,8 +508,8 @@ sub get_set {
       }
     } elsif ( substr ($arg, 0, 1) eq '-' ) {
       my $opt_name = substr ($arg, 1);
-      if ( exists GS_PATTERN_MAP->{$opt_name} ) {
-	$template = GS_PATTERN_MAP->{$opt_name};
+      if ( exists ${GS_PATTERN_MAP()}{$opt_name} ) {
+	$template = ${GS_PATTERN_MAP()}{$opt_name};
       } else {
 	croak "Unrecognised option: $opt_name to get_set";
       }
@@ -2248,6 +2244,32 @@ sub counter {
 
 # ----------------------------------------------------------------------
 
+=head2 EXPERIMENTAL: copy
+
+Produce a copy of self.  The copy is a *shallow* copy; any references
+will be shared by the instance upon which the method is called and the
+returned newborn.
+
+=cut
+
+sub copy {
+  my ($class, @args) = @_;
+  my %methods;
+
+  foreach (@args) {
+    my $name = $_;
+
+    $methods{$name} = sub {
+      my $self = shift; my $class = ref $self;
+      return bless { %$self }, $class;
+    };
+  }
+
+  $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------
+
 =head1 ADDDING NEW METHOD TYPES
 
 MethodMaker is a class that can be inherited. A subclass can define new
@@ -2315,6 +2337,8 @@ Returns pos_list, in the given order.
 =item	dump
 
 Returns a list item name, item value, in order.
+
+=back
 
 Example Usage:
 

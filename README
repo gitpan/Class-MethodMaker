@@ -54,7 +54,7 @@ SEE ALSO
 
 
 VERSION
-    Class::MethodMaker v0.95
+    Class::MethodMaker v0.96
 
 SUPPORTED METHOD TYPES
   new
@@ -122,11 +122,10 @@ SUPPORTED METHOD TYPES
 
         Value defaults to undef.
 
-    COMPATIBILITY: clear_x
-        Sets value to undef.  This method is present purely for backward
-        compatibility.  Please use  $foo->x (undef)
+    clear_x
+        Sets value to undef.  This is exactly equivalent to
 
-        instead.  *This method will disappear from the default in time*.
+          $foo->x (undef)
 
         No return.
 
@@ -156,8 +155,7 @@ SUPPORTED METHOD TYPES
         slot value to undef.  Use this to ensure backward compatibility.
 
     -noclear
-        Creates x (as per the default) only.  *This will become the
-        default in time*.
+        Creates x (as per the default) only.
 
     Alternatively, an arrayref specifying a template for method names
     may be supplied.  Each name must contain a '*' character, which will
@@ -621,6 +619,12 @@ SUPPORTED METHOD TYPES
     reset_x.
         The counter is implicitly initialized to zero.
 
+  EXPERIMENTAL: copy
+
+    Produce a copy of self.  The copy is a *shallow* copy; any
+    references will be shared by the instance upon which the method is
+    called and the returned newborn.
+
 ADDDING NEW METHOD TYPES
     MethodMaker is a class that can be inherited. A subclass can define
     new method types by writing a method that generates a hash of
@@ -677,22 +681,22 @@ ADDDING NEW METHOD TYPES
     dump
         Returns a list item name, item value, in order.
 
-        Example Usage:
+    Example Usage:
 
-          package Stat;
+      package Stat;
 
-          use Class::MethodMaker
-            builtin_class => [stat => [qw/ dev ino mode nlink /]],
+      use Class::MethodMaker
+        builtin_class => [stat => [qw/ dev ino mode nlink /]],
 
-          package main;
+      package main;
 
-          my $file = "$ENV{HOME}/.profile";
-          my $s = Stat->new ($file);
-          print "File $file has ", $s->nlink, " links\n";
+      my $file = "$ENV{HOME}/.profile";
+      my $s = Stat->new ($file);
+      print "File $file has ", $s->nlink, " links\n";
 
-        Note that (a) the new method does not check the return value of
-        the function called (in the above example, if $file does not
-        exist, you will silently get an empty object), and (b) if you
-        really want the above example, see the core File::stat module. 
-        But you get the idea, I hope.
+    Note that (a) the new method does not check the return value of the
+    function called (in the above example, if $file does not exist, you
+    will silently get an empty object), and (b) if you really want the
+    above example, see the core File::stat module.  But you get the
+    idea, I hope.
 

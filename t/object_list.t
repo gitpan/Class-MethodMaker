@@ -26,7 +26,7 @@ TEST { $o->pop_a->id == 1  };
 TEST { $o->push_a (Y->new) };
 TEST { @b = $o->a; @b == 2 };
 TEST { join (' ', $o->id) eq '0 2' };
-TEST { $a = 1; $a &&= ( ref ($_) eq 'Y' ) for $o->a; $a };
+TEST { $a = 1; for ($o->a) { $a &&= ( ref ($_) eq 'Y' ) }; $a };
 
 exit 0;
 

@@ -1,5 +1,10 @@
 Revision history for Perl extension Class::MethodMaker.
 
+0.96  Fix pre-5.005_03 breakage.
+      Undeprecate get_set->clear_x (keep it for consistency),
+      since all other basic types have a clear_ method.
+      Add in (experimental) copy method.
+
 0.95  Fix bug in boolean that failed in inherited classes.
       Make get_set (undef) work.  Deprecate clear_x.
       -sugar reintroduced for backward compatibility only.

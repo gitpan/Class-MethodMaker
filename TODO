@@ -2,6 +2,17 @@ IN NO GIVEN ORDER, Requests & Ideas
 
 ------------------------------------
 
+IDEA
+Add empty_copy method.
+Add copy_into method.
+
+------------------------------------
+
+REQUEST
+Add test for copy method to every normal test.
+
+------------------------------------
+
 REQUEST
 Add general options parsing mechanism, for use of meta-methods.
 

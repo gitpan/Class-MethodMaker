@@ -2,6 +2,7 @@ t/Test.pm
 t/abstract.t
 t/boolean.t
 t/code.t
+t/copy.t
 t/counter.t
 t/find_test
 t/get_concat.t

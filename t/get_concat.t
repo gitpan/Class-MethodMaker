@@ -7,7 +7,7 @@ use Test;
 
 use Class::MethodMaker 
   get_concat => 'x',
-  get_concat => {name => 'y', join => "\t"},
+  get_concat => {'name' => 'y', 'join' => "\t"},
   ;
 
 sub new { bless {}, shift; }
