@@ -35,3 +35,4 @@ MANIFEST
 MANIFEST.SKIP
 make.pm
 t/static_list.t
+t/get_set_hi.t

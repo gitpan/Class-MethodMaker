@@ -1,5 +1,20 @@
 Revision history for Class-MethodMaker.
 
+1.10  Sat Jan 25  3:59PM GMT 2002
+	- Add patch to maintain internal storage reference of 'list'.
+	  Patch courtesy of Dominique Dumont <domi@komarr.grenoble.hp.com>
+	- Improve documentation of 'list' 'x' me
+	- Remove unnecessary warning of undefined values to hash
+
+1.09  Fri Oct 25  6:58AM GMT 2002
+	- Improve documentation for experimental options for get_set; 
+	  problem notifications & doc. contributions from Tim Maher
+	  <tim@consultix-inc.com>
+	- Remove necessity to use 'set_x' / 'setx' methods in hash_init
+	  for -java, -eiffel-type get_set usages
+	- Remove warning of undefined values for initializing a hash
+	  (as they're perfectly legal and often useful)
+
 1.08  Mon Oct 14  5:33PM GMT 2002
 	- Enable setting of list with $o->x(...) so hash_init is useful
 	  for lists

@@ -62,7 +62,7 @@ use vars qw( @ISA );
 use Carp qw( carp cluck croak );
 
 use vars qw( $VERSION $PACKAGE );
-$VERSION = '1.08';
+$VERSION = '1.10';
 $PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------
@@ -333,7 +333,11 @@ sub new_hash_init {
         (scalar @_ == 1 and ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_;
 
       foreach (keys %args) {
-        $self->$_($args{$_});
+        if ( my $setter = $class->can(" __CMM__ $_") ) {
+          $setter->($self, $args{$_});
+        } else {
+          $self->$_($args{$_});
+        }
       }
       $self;
     };
@@ -438,10 +442,43 @@ The following options affect the methods created as detailed:
 Creates getx and setx methods, which return the value, and set the
 value (no return), respectively.
 
+Note the absence of underscores in the method names.  This is to accomodate
+the java-style StudlyCaps naming scheme.
+
+Example:
+
+  package Person;
+
+  use Class::MethodMaker
+    new_hash_init =>	'new' ,
+    get_set       => [qw/ -java Status Size Name /];
+
+  package main;
+
+  my $p = Person->new( Name   => 'Homer',
+                       Size   => '54',
+                       Status => 'Comical Moron',
+                     );
+
 =item	-eiffel
 
-Creates x and set_x methods, analogous to -java get_x and set_x
-respectively.
+Creates x and set_x methods, analogous to -java getx and setx respectively.
+
+Example:
+
+  package Person;
+
+  use Class::MethodMaker
+    new_hash_init =>	'new' ,
+    get_set       => [qw/ -eiffel status size name /];
+
+  package main;
+
+  my $p = Person->new( name   => 'Homer',
+                       size   => '54',
+                       status => 'Comical Moron',
+                     );
+
 
 =item	-compatibility
 
@@ -508,6 +545,15 @@ Creates e_clear, e_get, e_set, f_clear, f_get, f_set methods:
   use Class::MethodMaker
     get_set => [[undef, '*_clear', '*_get', '*_set'] => qw/e f/ ];
 
+These options may be combined, using order sensitivity.  E.g.,
+
+  use Class::MethodMaker
+    get_set => [qw/ -java Status -eiffel size name /];
+
+will instantiate the C<Status> component as a java style (with C<getStatus>,
+C<setStatus> methods), and the C<size> & C<name> components as eiffel style
+(with C<size>, C<set_size>, C<name>, C<set_name> methods).
+
 =cut
 
 sub _make_get_set {
@@ -560,6 +606,8 @@ sub _make_get_set {
     $methods{$method_names[$i]} = eval $methods[$i]
       if defined $method_names[$i];
   }
+
+  $methods{" __CMM__ $slot"} = $pgsetter;
 
   return %methods;
 }
@@ -1634,32 +1682,35 @@ argument and for each string, x, creates the methods:
 
 =item   x
 
-This method returns the list of values stored in the slot. In an array context
-it returns them as an array and in a scalar context as a reference to the
-array.  If any arguments are provided to this method, they I<replace> the
-current list contents.
+This method returns the list of values stored in the slot.  If any arguments
+are provided to this method, they I<replace> the current list contents.  In an
+array context it returns the values as an array and in a scalar context as a
+reference to the array.  Note that this reference is currently a direct
+reference to the storage; changes to the storage will affect the contents of
+the reference, and vice-versa.  This behaviour is not guaranteed; caveat
+emptor.
 
-=item   x_push
+=item x_push
 
-=item   x_pop
+=item x_pop
 
-=item   x_shift
+=item x_shift
 
-=item   x_unshift
+=item x_unshift
 
-=item   x_splice
+=item x_splice
 
-=item   x_clear
+=item x_clear
 
-=item   x_count
+=item x_count
 
 Returns the number of elements in x.
 
-=item	x_index
+=item x_index
 
 Takes a list of indices, returns a list of the corresponding values.
 
-=item	x_set
+=item x_set
 
 Takes a list, treated as pairs of index => value; each given index is
 set to the corresponding value.  No return.
@@ -1679,12 +1730,9 @@ sub list {
       sub {
         my ($self, @list) = @_;
         defined $self->{$field} or $self->{$field} = [];
-        #
-        # Push of arguments deprecated.  Later, the semantic may
-        # change (likely to replace, rather than push onto, the list).
-        #
 
-        $self->{$field} = [ map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list ]
+        # Maintain any existing reference (avoid replacing)
+        @{$self->{$field}} = map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list
           if @list;
 
         return wantarray ? @{$self->{$field}} : $self->{$field};
@@ -2023,10 +2071,6 @@ sub hash {
               return @{$self->{$field}}{@$key};
             } elsif ( $type eq 'HASH' ) {
               while (my ($subkey, $value) = each %$key ) {
-                if ( $^W ) {
-                  defined $value
-                    or carp "No value for key $subkey of hash $field.";
-                }
                 $self->{$field}->{$subkey} = $value;
               }
               return wantarray ? %{$self->{$field}} : $self->{$field};
@@ -3066,11 +3110,11 @@ Contributions from:
 
 =head1 COPYRIGHT
 
-    Copyright (c) 2002, 2001, 2000 Martyn J. Pearce.  This program is free
-    software; you can redistribute it and/or modify it under the same terms as
-    Perl itself.
+    Copyright (c) 2000, 2001, 2002, 2003 Martyn J. Pearce.  This program is
+    free software; you can redistribute it and/or modify it under the same
+    terms as Perl itself.
 
-    Copyright 1998, 1999, 2000 Evolution Online Systems, Inc.  You may use
+    Copyright (c) 1998, 1999, 2000 Evolution Online Systems, Inc.  You may use
     this software for free under the terms of the MIT License.  More info
     posted at http://www.evolution.com, or contact info@evolution.com
 
