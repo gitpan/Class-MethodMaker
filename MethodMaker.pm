@@ -1,13 +1,33 @@
 package Class::MethodMaker;
 
 #
-# $Id: MethodMaker.pm,v 1.1.1.2 1997/01/23 23:05:36 seibel Exp $
+# $Id: MethodMaker.pm,v 1.21 2000/03/23 19:38:25 recoil Exp $
 #
 
 # Copyright (c) 1996 Organic Online. All rights reserved. This program is
 # free software; you can redistribute it and/or modify it under the same
 # terms as Perl itself.
 
+## TODO:
+# Use Pseudohashes ?
+# Prefix internal names with '__' ?
+# Is struct still useful ?
+# Add caching values (scalar, list, etc.)
+# Add hash of lists
+# Autoexpansion of array refs in list basic method is a gotcha if you're
+# trying to insert arrayrefs into the list
+## From M. Simon Cavallet
+# - Note that none of the new methods here depend on the object being
+#   based on a hash; all of the base MethodMaker methods do except for
+#   abstract. (I really should double-check this claim...)
+#
+# - It would be good to create new_... methods which accepted prototype
+#   objects to clone with Ref::copyref, which enables nice defaults
+#   management and allows use with non-hash-based classes.
+#
+# - There's some cruft from the original object meta-method that can
+#   probably be stripped out, as long as reasonable effort is invested
+#   in maintaining compatibility over a range of Perl versions.
 
 =head1 NAME
 
@@ -39,13 +59,13 @@ use vars '@ISA';
 @ISA = qw ( AutoLoader );
 
 use vars '$VERSION';
-$VERSION = "0.92";
-			
+$VERSION = "0.93";
+
+# ----------------------------------------------------------------------
+
 # Just to point out the existence of these variables
 
 use vars
- '$TargetClass',    # The class we are making methods for.
-
  '%BooleanPos',     # A hash of the current index into the bit vector
                     # used in boolean for each class.
 
@@ -60,16 +80,6 @@ use vars
 
 sub ima_method_maker { 1 };
 
-sub set_target_class {
-  my ($class, $target) = @_;
-  $TargetClass = $target;
-}
-
-sub get_target_class {
-  my ($class) = @_;
-  $TargetClass || $class->find_target_class;
-}
-
 sub find_target_class {
   # Find the class to add the methods to. I'm assuming that it would be
   # the first class in the caller() stack that's not a subsclass of
@@ -80,34 +90,25 @@ sub find_target_class {
   my $i = 0;
   while (1) {
     $class = (caller($i))[0];
-    $class->isa('Class::MethodMaker') or last;
+    ( $class->isa('Class::MethodMaker')
+      and
+      &{$class->can ('ima_method_maker')} )
+      or last;
     $i++;
   }
-  $TargetClass = $class;
+  return $class;
 }
 
 sub import {
   my ($class, @args) = @_;
 
-  # Set a bit of syntactic sugar if desired which allows us to say things
-  # like:
-  #
-  #   make methods
-  #     get_set => [ qw / foo bar baz / ],
-  #     list    => [ qw / a b c / ];
-
-  if (defined $args[0] and $args[0] eq '-sugar') {
-    shift @args;
-    *methods:: = *Class::MethodMaker::;
-  }
-  
   @args and $class->make(@args);
 }
 
 sub make {
   my ($method_maker_class, @args) = @_;
 
-  $method_maker_class->find_target_class; # sets $TargetClass
+  my $TargetClass = $method_maker_class->find_target_class;
 
   # We have to initialize these before we run any of the
   # meta-methods. (At least the anon lists, so they get captured properly
@@ -116,7 +117,7 @@ sub make {
   $BooleanFields{$TargetClass} ||= [];
   $StructPos{$TargetClass} ||= 0;
   $StructFields{$TargetClass} ||= [];
-  
+
   # make generic methods. The list passed to import should alternate
   # between the names of the meta-method to call to generate the methods
   # and either a scalar arg or a ARRAY ref to a list of args.
@@ -139,14 +140,14 @@ sub install_methods {
 
   no strict 'refs';
 #  print STDERR "CLASS: $class\n";
-  $TargetClass || $class->find_target_class;
+  my $TargetClass = $class->find_target_class;
   my $package = $TargetClass . "::";
-  
+
   my ($name, $code);
   while (($name, $code) = each %methods) {
     # add the method unless it's already defined (which should only
     # happen in the case of static methods, I think.)
-    
+
     *{"$package$name"} = $code unless defined *{"$package$name"}{CODE};
   }
 }
@@ -155,9 +156,6 @@ sub install_methods {
 
 __END__
 
-
-
-## GENERIC METHODS ##
 
 =head1 SUPPORTED METHOD TYPES
 
@@ -188,6 +186,8 @@ sub new {
   }
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
 
 =head2 new_with_init
 
@@ -224,21 +224,28 @@ sub new_with_init {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 new_hash_init
 
-Creates a basic constructor which accepts a hash of slot-name/value pairs
-with which to initialize the object. The slot-names are interpreted as
-the names of methods that can be called on the object after it is created
-and the values are the arguments to be passed to those methods.
+Creates a basic constructor which accepts a hash of slot-name/value
+pairs with which to initialize the object.  The slot-names are
+interpreted as the names of methods that can be called on the object
+after it is created and the values are the arguments to be passed to
+those methods.
 
 Takes a single string or a reference to an array of strings as its
-argument. For each string creates a method of the form listed below. Note
-that this method can be called on an existing objec, which allows it to
-be combined with new_with_init (see above) to provide some default
-values. (Basically, declare a new_with_init method, say 'new' and a
-new_hash_init method, for example, 'hash_init' and then in the init
-method, you can call modify or add to the %args hash and then call
-hash_init.)
+argument.  For each string creates a method that takes a list of
+arguments that is treated as a set of key-value pairs, with each such
+pair causing a call C<$self-E<gt>key ($value)>.
+
+This method may be called as a class method, causing a new instance to
+be created, or as an instance method, which will operate on the subject
+instance.  This allows it to be combined with new_with_init (see above)
+to provide some default values.  For example, declare a new_with_init
+method, say 'new' and a new_hash_init method, for example, 'hash_init'
+and then in the init method, you can call modify or add to the %args
+hash and then call hash_init.
 
     sub <string> {
       my ($class, %args) = @_;
@@ -257,8 +264,13 @@ sub new_hash_init {
   my %methods;
   foreach (@args) {
     $methods{$_} = sub {
-      my ($class, %args) = @_;
-      my $self = ref($class) ? $class : bless {}, $class;
+      my $class = shift;
+      my $self = ref ($class) ? $class : bless {}, $class;
+
+      # Accept key-value attr list, or reference to unblessed hash of
+      # attr
+      my %args =
+	(scalar @_ == 1 and ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_;
 
       foreach (keys %args) {
 	$self->$_($args{$_});
@@ -269,21 +281,27 @@ sub new_hash_init {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 get_set
 
 Takes a single string or a reference to an array of strings as its
 argument. For each string, x creates two methods:
 
-  sub x {
-    my ($self, $new) = @_;
-    defined $new and $self->{$name} = $new;
-    $self->{$name};
-  }
+=over 4
 
-  sub clear_x
-    my ($self) = @_;
-    $self->{$name} = undef;
-  }
+=item	x
+
+If an argument is provided, sets a new value for x.
+Returns (new) value.
+Value defaults to undef.
+
+=item	clear_x
+
+Sets value to undef.
+No return.
+
+=back
 
 This is your basic get/set method, and can be used for slots containing
 any scalar value, including references to non-scalar data. Note, however,
@@ -302,7 +320,7 @@ sub get_set {
       defined $new and $self->{$name} = $new;
       $self->{$name};
     };
-     
+
     $methods{"clear_$name"} = sub {
       my ($self) = @_;
       $self->{$name} = undef;
@@ -311,9 +329,11 @@ sub get_set {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 get_concat
 
-Like get_set except sets don't clear out the original value, but instead
+Like get_set except sets do not clear out the original value, but instead
 concatenate the new value to the existing one. Thus these slots are only
 good for plain scalars. Also, like get_set, defines clear_foo method.
 
@@ -323,11 +343,25 @@ sub get_concat {
   my ($class, @args) = @_;
   my %methods;
   foreach (@args) {
-    my $name = $_;
+    my ($name, $join) = ($_, '');
+    if ( ref ($name) eq 'HASH' ) {
+      die "get_concat requires name field"
+	if ! exists $_->{name};
+      $name = $_->{name};
+      $join = $_->{join} || '';
+    }
     $methods{$name} = sub {
       my ($self, $new) = @_;
-      $self->{$name} ||= "";
-      defined $new and $self->{$name} .= $new;
+      if ( defined $new ) {
+	if ( defined $self->{$name} ) {
+	  $self->{$name} = join $join, $self->{$name}, $new;
+	} else {
+	  $self->{$name} = $new;
+	}
+      }
+      # If returning undef upsets people, *return* '', but don't set ---
+      # setting causes problems where join starts adding join fields
+      # at start...
       $self->{$name};
     };
 
@@ -338,6 +372,8 @@ sub get_concat {
   }
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
 
 =head2 grouped_fields
 
@@ -365,6 +401,8 @@ sub grouped_fields {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 object
 
 Creates methods for accessing a slot that contains an object of a given
@@ -378,33 +416,67 @@ object stored in that slot.
                          slot => 'foo',
                          comp_mthds => [ qw / bar baz / ]
                         },
+	       'Fob' => [
+			 {
+			  slot => 'dog',
+			  comp_mthds => 'bark',
+			 },
+			 {
+			  slot => 'cat',
+			  comp_mthds => 'miaow',
+			 },
+			];
               ];
 
 
-This is a hairy one. The main argument should be a reference to an
-array. The array should contain pairs of class => sub-argument
-pairs. The sub-argument's are further parsed thusly:
+The main argument should be a reference to an array. The array should
+contain pairs of class => sub-argument pairs.
+The sub-arguments parsed thus:
 
-If the sub-argument is a simple string or a reference to an array of
-strings (as is the case for Foo and Bar above), for each string a get/set
-method is created that can store an object of that class. (The get/set
-method, if called with a reference to an object of the given class as the
-first argument, stores it in the slot. If the slot isn't filled yet it
-creates an object by calling the given class's new method. Any arguments
-passed to the get/set method are passed on to new. In all cases the
-object now stored in the slot is returned.
+=over 4
 
-If the sub-argument is a ref to a hash (as with Baz, above) then the
-hash should have two keys: slot and comp_mthds. The value indexed by
-'slot' will be interpreted as the is in (a). The value or values (ref to
-an array if plural) indexed by 'comp_mthds' are the names of methods
-which should be "inherited" from the object stored in the slot. That is,
-using the example above, a method, foo, is created in the class that
-calls MethodMaker, which can get and set the value of a slot containing
-an object of class Baz. Class Baz in turn defines two methods, 'bar', and
-'baz'. Two more methods are created in the class using MethodMaker, named
-'bar' and 'baz' which result in a call to the 'bar' and 'baz' methods,
-through the Baz object stored in slot foo.
+=item	Hash Reference
+
+See C<Baz> above.  The hash should contain the following keys:
+
+=over 4
+
+=item	slot
+
+The name of the instance attribute (slot).
+
+=item	comp_mthds
+
+A stringor array ref, naming the methods that will be forwarded directly
+to the object in the slot.
+
+=back
+
+=item	Array Reference
+
+As for C<String>, for each member of the array.  Also works if each
+member is a hash reference (see C<Fob> above).
+
+=item	String
+
+The name of the instance attribute (slot).
+
+=back
+
+For each method definition a get/set method is created that can store
+an object of that class. (The get/set method, if called with a reference
+to an object of the given class as the first argument, stores it in the
+slot. If the slot is not filled yet it creates an object by calling the
+given new method of the given class. Any arguments passed to the get/set
+method are passed on to new. In all cases the object now stored in the
+slot is returned.
+
+So, using the example above, a method, C<foo>, is created in the class
+that calls MethodMaker, which can get and set the value of those objects
+in hash slot {'foo'}, which will generally contain an object of class
+Baz.  Two additional methods are created in the class using MethodMaker,
+named 'bar' and 'baz' which result in a call to the 'bar' and 'baz'
+methods on the Baz object stored in slot foo.
 
 =cut
 
@@ -415,15 +487,29 @@ sub object {
   while (@args) {
     my $class = shift @args;
     my $list = shift @args or die "No slot names for $class";
-    my @list;
+
+    # Allow a list of hashrefs.
+    my @list = ( ref($list) eq 'ARRAY' ) ? @$list : ($list);
 
     my $ref = ref $list;
-    if ($ref eq 'HASH') {
-      my $name = $list->{'slot'};
-      my $composites =  $list->{'forward'} || $list->{'comp_mthds'};
-      @list = ($name);
-      my @composites = ref($composites) eq 'ARRAY'
-	? @$composites : ($composites);
+
+    my $obj_def;
+    foreach $obj_def (@list) {
+      my $type = $class; # Hmmm. We have to do this for the closure to
+                         # work. I.e. using $class in the closure dosen't
+                         # work. Someday I'll actually understand scoping
+                         # in Perl. [ Uh, is this true? 11/11/96 -PBS ]
+      my ($name, @composites);
+      my $new_meth = 'new';
+      if ( ! ref $obj_def ) {
+        $name = $obj_def;
+      } else {
+        $name = $obj_def->{'slot'};
+	my $composites = $obj_def->{'comp_mthds'};
+	@composites = ref($composites) eq 'ARRAY' ? @$composites
+			    : defined $composites ? ($composites) : ();
+      }
+
       my $meth;
       foreach $meth (@composites) {
 	$methods{$meth} =
@@ -432,21 +518,10 @@ sub object {
 	    $self->$name()->$meth(@args);
 	  };
       }
-    } else {
-      @list = ref($list) eq 'ARRAY' ? @$list : ($list);
-    }
 
-    foreach (@list) {
-      my $name = $_;
-      my $type = $class; # Hmmm. We have to do this for the closure to
-                         # work. I.e. using $class in the closure dosen't
-                         # work. Someday I'll actually understand scoping
-                         # in Perl. [ Uh, is this true? 11/11/96 -PBS ]
       $methods{$name} = sub {
 	my ($self, @args) = @_;
-	if (ref $args[0] eq $class) { # This is sub-optimal. We should
-                                      # really use isa from UNIVERSAL.pm
-                                      # to catch sub-classes too.
+	if (ref $args[0] and UNIVERSAL::isa($args[0], $class)) {
 	  $self->{$name} = $args[0];
 	} else {
 	  defined $self->{$name} or $self->{$name} = $type->new(@args);
@@ -463,6 +538,132 @@ sub object {
   $class = $class; # Huh? Without this line the next line doesn't work!
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
+
+=head2 object_list
+
+Functions like C<list>, but maintains an array of referenced objects
+in each slot. Forwarded methods return a list of the results returned
+by C<map>ing the method over each object in the array.
+
+Arguments are like C<object>.
+
+=cut
+
+sub object_list {
+  my ($class, @args) = @_;
+  my %methods;
+
+  while (@args) {
+    my $class = shift @args;
+    my $list = shift @args or die "No slot names for $class";
+
+    my @list = ( ref($list) eq 'ARRAY' ) ? @$list : ($list);
+
+    my $obj_def;
+    foreach $obj_def (@list) {
+      my $type = $class;
+	    # Hmmm. We have to do this for the closure to work. I.e. using
+	    # $class in the closure dosen't work. Someday I'll actually
+	    # understand scoping in Perl. [ Uh, is this true? 11/11/96 -PBS ]
+
+      my ( $name, @composites );
+      my $new_meth = 'new';
+      if ( ! ref $obj_def ) {
+        $name = $obj_def;
+      } else {
+        $name = $obj_def->{'slot'};
+	my $composites = $obj_def->{'comp_mthds'};
+	@composites = ref($composites) eq 'ARRAY' ? @$composites
+			    : defined $composites ? ($composites) : ();
+      }
+
+      $methods{$name} = sub {
+	my ($self, @list) = @_;
+	defined $self->{$name} or $self->{$name} = [];
+	if ( scalar @list == 1 and ref( $list[0] ) eq 'ARRAY' ) {
+	  @list = @{ $list[0] };
+	}
+	push @{$self->{$name}}, map {
+	  (ref $_ and UNIVERSAL::isa($_, $class)) ? $_ : $type->$new_meth($_)
+	} @list;
+
+	# Use wantarray for consistency with list, which uses it for
+	# consistency with its own doco., and the hash impl.
+
+	return wantarray ? @{$self->{$name}} : $self->{$name};
+      };
+
+      $methods{"pop_$name"} = sub {
+	my ($self) = @_;
+	pop @{$self->{$name}}
+      };
+
+      $methods{"push_$name"} = sub {
+	my ($self, @values) = @_;
+	push @{$self->{$name}}, @values;
+      };
+
+      $methods{"shift_$name"} = sub {
+	my ($self) = @_;
+	shift @{$self->{$name}}
+      };
+
+      $methods{"unshift_$name"} = sub {
+	my ($self, @values) = @_;
+	unshift @{$self->{$name}}, @values;
+      };
+
+      $methods{"splice_$name"} = sub {
+	my ($self, $offset, $len, @list) = @_;
+	splice(@{$self->{$name}}, $offset, $len, @list);
+      };
+
+      $methods{"clear_$name"} = sub {
+	my ($self) = @_;
+	$self->{$name} = [];
+      };
+
+
+      $methods{"count_$name"} = sub {
+	my ($self) = @_;
+	return exists $self->{$name} ? scalar @{$self->{$name}} : 0;
+      };
+
+      #
+      # Deprecated in line with list
+      #
+      $methods{"${name}_ref"} = sub {
+	my ($self) = @_;
+	$self->{$name};
+      };
+
+      my $meth;
+      foreach $meth (@composites) {
+	$methods{$meth} = sub {
+	  my ($self, @args) = @_;
+	  map { $_->$meth(@args) } $self->$name()
+	};
+      }
+    }
+  }
+  $class = $class; # Huh? Without this line the next line doesn't work!
+  $class->install_methods(%methods);
+}
+
+
+# ----------------------------------------------------------------------
+
+=head2	forward
+
+  forward => [ comp => 'method1', comp2 => 'method2' ]
+
+Define pass-through methods for certain fields.  The above defines that
+method C<method1> will be handled by component C<comp>, whilst method
+C<method2> will be handled by component C<comp2>.
+
+=cut
 
 sub forward {
   my ($class, %args) = @_;
@@ -482,6 +683,7 @@ sub forward {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
 
 =head2 boolean
 
@@ -490,16 +692,43 @@ sub forward {
 Creates methods for setting, checking and clearing flags. All flags
 created with this meta-method are stored in a single vector for space
 efficiency. The argument to boolean should be a string or a reference to
-an array of strings. For each string x it defines several methods: x,
-set_x, and clear x. x returns the value of the x-flag. If called with an
-argument, it first sets the x-flag to the truth-value of the
-argument. set_x is equivalent to x(1) and clear_x is equivalent to x(0).
+an array of strings. For each string x it defines several methods:
 
-Additionally, boolean defines three class method: I<bits>, which returns
-the vector containing all of the bit fields (remember however that a
-vector containing all 0 bits is still true), I<boolean_fields>, which returns
-a list of all the flags by name, and I<bit_dump>, which returns a hash of
-the flag-name/flag-value pairs.
+=over 4
+
+=item	x
+
+Returns the value of the x-flag.  If called with an argument, it first
+sets the x-flag to the truth-value of the argument.
+
+=item	set_x
+
+Equivalent to x(1).
+
+=item	clear_x
+
+Equivalent to x(0).
+
+=back
+
+Additionally, boolean defines three class methods:
+
+=over 4
+
+=item	bits
+
+Returns the vector containing all of the bit fields (remember however
+that a vector containing all 0 bits is still true).
+
+=item	boolean_fields
+
+Returns a list of all the flags by name.
+
+=item	bit_dump
+
+Returns a hash of the flag-name/flag-value pairs.
+
+=back
 
 =cut
 
@@ -507,7 +736,7 @@ sub boolean {
   my ($class, @args) = @_;
   my %methods;
 
-  my $TargetClass = $class->get_target_class;
+  my $TargetClass = $class->find_target_class;
 
   my $boolean_fields =
     $BooleanFields{$TargetClass};
@@ -518,7 +747,7 @@ sub boolean {
       defined $new and $self->{'boolean'} = $new;
       $self->{'boolean'};
     };
-  
+
   $methods{'bit_fields'} = sub { @$boolean_fields; };
 
   $methods{'bit_dump'} =
@@ -526,7 +755,7 @@ sub boolean {
       my ($self) = @_;
       map { ($_, $self->$_()) } @$boolean_fields;
     };
-  
+
   foreach (@args) {
     my $field = $_;
     my $bfp = $BooleanPos{$TargetClass}++;
@@ -564,34 +793,17 @@ sub boolean {
   $class->install_methods(%methods);
 }
 
-=head2 struct
+# ----------------------------------------------------------------------
 
-  struct => [ 'foo' => [ qw / foo bar baz / ] ];
+# Docs removed: is there any real use for struct?
 
-
-XXX these docs aren't right yet.
-
-Creates methods for setting, checking and clearing slots in a struct.
-All the slots created with this meta-method are stored in a single array
-for speed efficiency.  The argument to struct should be a string or a
-reference to an array of strings. For each string x it defines two
-methods: I<x> and I<clear_x>. x returns the value of the x-slot. If called with
-an argument, it first sets the x-slot to the argument. clear_x sets the
-slot to undef.
-
-Additionally, struct defines three class method: I<struct>, which returns
-the array containing all of the bit fields (remember however that a
-vector containing all 0 bits is still true), I<boolean_fields>, which returns
-a list of all the slots by name, and I<bit_dump>, which returns a hash of
-the slot-name/slot-value pairs.
-
-=cut
+# XXX Candidate for a pseudo-hash?
 
 sub struct {
   my ($class, @args) = @_;
   my %methods;
 
-  $class->get_target_class;
+  my $TargetClass = $class->find_target_class;
 
   my $struct_fields =
     $StructFields{$TargetClass};
@@ -607,24 +819,23 @@ sub struct {
       @values and @{$self->{'struct'}} = @values;
       @{$self->{'struct'}};
     };
-  
+
   $methods{'struct_dump'} =
     sub {
       my ($self) = @_;
       map { ($_, $self->$_()) } @$struct_fields;
     };
-  
+
   foreach (@args) {
     my $field = $_;
+    # $StructPos is a global declared at top of file. We need to make a
+    # local copy because it will be captured in the closure and if we
+    # capture the global version the changes to it will affect all the
+    # closures.
     my $sfp = $StructPos{$TargetClass}++;
-        # $struct_pos a global declared at top of file. We need to make
-        # a local copy because it will be captured in the closure and if
-        # we capture the global version the changes to it will effect all
-        # the closures. (Note also that its value is reset with each
-        # call to import_into_class.)
+    # $struct_fields is also declared up above. It is used to store a
+    # list of the names of all the struct fields.
     push @$struct_fields, $field;
-        # $struct_fields is also declared up above. It is used to store a
-        # list of the names of all the struct fields.
 
     $methods{$field} =
       sub {
@@ -644,6 +855,7 @@ sub struct {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
 
 =head2 listed_attrib
 
@@ -691,7 +903,7 @@ sub listed_attrib {
 	my ($self) = @_;
 	$self->$field(0);
       };
-    
+
     $methods{$field . "_objects"} =
       sub {
 	values %list;
@@ -699,6 +911,8 @@ sub listed_attrib {
   }
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
 
 =head2 key_attrib
 
@@ -756,7 +970,7 @@ sub key_attrib {
 	delete $list{$self->{$field}};
 	$self->{$field} = undef;
       };
-    
+
     $methods{"find_$field"} =
       sub {
 	my ($self, @args) = @_;
@@ -770,12 +984,15 @@ sub key_attrib {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 key_with_create
 
   key_with_create => [ qw / foo bar baz / ]
 
 Just like key_attrib except the find_x method is defined to call the new
-method to create an object if there is no object already stored under any of the keys you give as arguments.
+method to create an object if there is no object already stored under
+any of the keys you give as arguments.
 
 =cut
 
@@ -812,14 +1029,14 @@ sub key_with_create {
 	}
 	$self->{$field};
       };
-    
+
     $methods{"clear_$field"} =
       sub {
 	my ($self) = @_;
 	delete $list{$self->{$field}};
 	$self->{$field} = undef;
       };
-    
+
     $methods{"find_$field"} =
       sub {
 	my ($class, @args) = @_;
@@ -836,22 +1053,47 @@ sub key_with_create {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 list
 
 Creates several methods for dealing with slots containing list
 data. Takes a string or a reference to an array of strings as its
-argument and for each string, x, creates the methods: x, push_x, and
-pop_x. The method x returns the list of values stored in the slot. In an
-array context it returns them as an array and in a scalar context as a
-reference to the array. If called with arguments, x will push them onto
-the list. push_x and pop_x do about what you would expect.
+argument and for each string, x, creates the methods:
+
+=over 4
+
+=item	x
+
+This method returns the list of values stored in the slot. In an array
+context it returns them as an array and in a scalar context as a
+reference to the array.
+
+=item	push_x
+
+=item	pop_x
+
+=item	shift_x
+
+=item	unshift_x
+
+=item	splice_x
+
+=item	clear_x
+
+=item	count_x
+
+Returns the number of elements in x.
+
+=back
 
 =cut
 
+# *** Any additinal/changed methods must be mirrored in object_list
 sub list {
   my ($class, @args) = @_;
   my %methods;
-  
+
   foreach (@args) {
     my $field = $_;
 
@@ -859,11 +1101,12 @@ sub list {
       sub {
 	my ($self, @list) = @_;
 	defined $self->{$field} or $self->{$field} = [];
+	#
+	# Push of arguments deprected.
+	# Later, we'll use arguments to slice into array.
+	#
 	push @{$self->{$field}}, map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list;
-	@{$self->{$field}}; # no it's not. That was exposing the
-                            # implementation, plus you couldn't say
-                            # scalar $obj->field to get the number of
-                            # items in it.
+	return wantarray ? @{$self->{$field}} : $self->{$field};
       };
 
     $methods{"pop_$field"} =
@@ -902,7 +1145,16 @@ sub list {
 	$self->{$field} = [];
       };
 
-    $methods{"$ {field}_ref"} =
+    $methods{"count_$field"} =
+      sub {
+	my ($self) = @_;
+	return exists $self->{$field} ? scalar @{$self->{$field}} : 0;
+      };
+
+    #
+    # Deprecated.
+    #
+    $methods{"${field}_ref"} =
       sub {
 	my ($self) = @_;
 	$self->{$field};
@@ -911,21 +1163,53 @@ sub list {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
 =head2 hash
 
 Creates a group of methods for dealing with hash data stored in a
-slot. Takes a string or a reference to an array of strings and for each
-string, x, creates: x, x_keys, x_values, and x_tally. Called with no
-arguments x returns the hash stored in the slot, as a hash in an array
-context or as a refernce in a scalar context. Called with one argument it
-treats the argument as a key and returns the value stored under that key,
-or as a list of keys (if it is a reference to a list) and returns the
-list of values stored under those keys. Called with more than one
-argument, treats them as a series of key/value pairs and adds them to the
-hash. x_keys returns the keys of the hash, and x_values returns the list
-of values. x_tally takes a list of arguments and for each scalar in the
-list increments the value stored in the hash and returns a list of the
-current (after the increment) values.
+slot.
+
+Takes a string or a reference to an array of strings and for each
+string, x, creates:
+
+=over 4
+
+=item	x
+
+Called with no arguments returns the hash stored in the slot, as a hash
+in a list context or as a reference in a scalar context.
+
+Called with one argument it treats the argument as a key and returns the
+value stored under that key, or as a list of keys (if it is a reference
+to a list) and returns the list of values stored under those keys.
+
+Called with more than one argument, treats them as a series of key/value
+pairs and adds them to the hash.
+
+=item 	x_keys
+
+Returns the keys of the hash.
+
+=item	x_values
+
+Returns the list of values.
+
+=item	x_tally
+
+Takes a list of arguments and for each scalar in the list increments the
+value stored in the hash and returns a list of the current (after the
+increment) values.
+
+=item	x_exists
+
+Takes a single key, returns whether that key exists in the hash.
+
+=item	x_delete
+
+Takes a list, deletes each key from the hash.
+
+=back
 
 =cut
 
@@ -942,7 +1226,109 @@ sub hash {
 	defined $self->{$field} or $self->{$field} = {};
 	if (scalar @list == 1) {
 	  my $key = shift @list;
-	  if (ref $key) { # had better by an array ref
+	  if (ref $key eq 'ARRAY') {
+	    return @{$self->{$field}}{@$key};
+	  } else {
+	    return $self->{$field}->{$key};
+	  }
+	} else {
+	  while (1) {
+	    my $key = shift @list;
+	    defined $key or last;
+	    my $value = shift @list;
+	    defined $value or carp "No value for key $key.";
+	    $self->{$field}->{$key} = $value;
+	  }
+	  wantarray ? %{$self->{$field}} : $self->{$field};
+	}
+      };
+
+    $methods{$field . "_keys"} =
+      sub {
+	my ($self) = @_;
+	keys %{$self->{$field}};
+      };
+
+    $methods{$field . "_values"} =
+      sub {
+	my ($self) = @_;
+	values %{$self->{$field}};
+      };
+
+    $methods{$field . "_exists"} =
+      sub {
+	my ($self) = shift;
+	my ($key) = @_;
+	return
+	  exists $self->{$field} && exists $self->{$field}->{$key};
+      };
+
+    $methods{$field . "_tally"} =
+      sub {
+	my ($self, @list) = @_;
+	defined $self->{$field} or $self->{$field} = {};
+	map { ++$self->{$field}->{$_} } @list;
+      };
+
+    $methods{$field . "_delete"} =
+      sub {
+	my ($self, @keys) = @_;
+	delete @{$self->{$field}}{@keys};
+      };
+  }
+  $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------
+
+=head2	tie_hash
+
+Much like C<hash>, but uses a tied hash instead.
+
+Takes a list of pairs, where the first is the name of the component, the
+second is a hash reference.  The hash reference recognizes the following keys:
+
+=over 4
+
+=item	tie
+
+I<Required>.  The name of the class to tie to.
+I<Make sure you have C<use>d the required class>.
+
+=item	args
+
+I<Required>.  Additional arguments for the tie, as an array ref.
+
+=back
+
+Example:
+
+   tie_hash	=> [
+		    hits	=> {
+				    tie	=> qw/ Tie::RefHash /,
+				    args => [],
+				   },
+		   ],
+
+
+=cut
+
+sub tie_hash {
+  my ($class, @args) = @_;
+  my %methods;
+
+  while ( my ($field, $args) = splice (@args, 0, 2)) {
+    $methods{$field} =
+      sub {
+	my ($self, @list) = @_;
+	if ( ! defined $self->{$field} ) {
+	  my %hash;
+	  tie %hash, $args->{tie}, @{$args->{args}};
+	  $self->{$field} = \%hash;
+	}
+	if (scalar @list == 1) {
+	  my $key = shift @list;
+	  if (ref $key eq 'ARRAY') {
 	    return @{$self->{$field}}{@$key};
 	  } else {
 	    return $self->{$field}->{$key};
@@ -966,11 +1352,19 @@ sub hash {
 	my ($self) = @_;
 	keys %{$self->{$field}};
       };
-    
+
     $methods{$field . "_values"} =
       sub {
 	my ($self) = @_;
 	values %{$self->{$field}};
+      };
+
+    $methods{$field . "_exists"} =
+      sub {
+	my ($self) = shift;
+	my ($key) = @_;
+	return
+	  exists $self->{$field} && exists $self->{$field}->{$key};
       };
 
     $methods{$field . "_tally"} =
@@ -1013,6 +1407,14 @@ sub hash {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
+
+=head2	static_hash
+
+Much like C<hash>, but uses a class-based hash instead.
+
+=cut
+
 sub static_hash {
   my ($class, @args) = @_;
   my %methods;
@@ -1023,7 +1425,7 @@ sub static_hash {
 
     $methods{$field} =
       sub {
-	my ($self, @list) = @_;
+	my ($class, @list) = @_;
 	if (scalar @list == 1) {
 	  my $key = shift @list;
 	  if (ref $key) { # had better by an array ref
@@ -1047,38 +1449,45 @@ sub static_hash {
 
     $methods{$field . "_keys"} =
       sub {
-	my ($self) = @_;
+	my ($class) = @_;
 	keys %hash;
       };
-    
+
     $methods{$field . "_values"} =
       sub {
-	my ($self) = @_;
+	my ($class) = @_;
 	values %hash;
+      };
+
+    $methods{$field . "_exists"} =
+      sub {
+	my ($class) = shift;
+	my ($key) = @_;
+	return
+	  exists $hash{$key};
       };
 
     $methods{$field . "_tally"} =
       sub {
-	my ($self, @list) = @_;
-	defined $self->{$field} or $self->{$field} = {};
+	my ($class, @list) = @_;
 	map { ++$hash{$_} } @list;
       };
 
     $methods{"add_$field"} =
       sub {
-	my ($self, $attrib, $value) = @_;
+	my ($class, $attrib, $value) = @_;
 	$hash{$attrib} = $value;
       };
 
     $methods{"clear_$field"} =
       sub {
-	my ($self, $attrib) = @_;
+	my ($class, $attrib) = @_;
 	delete $hash{$attrib};
       };
 
     $methods{"add_$ {field}s"} =
       sub {
-	my ($self, %attribs) = @_;
+	my ($class, %attribs) = @_;
 	my ($k, $v);
 	while (($k, $v) = each %attribs) {
 	  $hash{$k} = $v;
@@ -1087,7 +1496,7 @@ sub static_hash {
 
     $methods{"clear_$ {field}s"} =
       sub {
-	my ($self, @attribs) = @_;
+	my ($class, @attribs) = @_;
 	my $attrib;
 	foreach $attrib (@attribs) {
 	  delete $hash{$attrib};
@@ -1096,6 +1505,8 @@ sub static_hash {
   }
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
 
 =head2 code
 
@@ -1112,10 +1523,10 @@ whatever arguments (including none) were passed in.
 sub code {
   my ($class, @args) = @_;
   my %methods;
-  
+
   foreach (@args) {
     my $field = $_;
-    
+
     $methods{$field} = sub {
       my ($self, @args) = @_;
       if (ref($args[0]) eq 'CODE') {
@@ -1129,6 +1540,8 @@ sub code {
   }
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
 
 =head2 method
 
@@ -1161,17 +1574,23 @@ sub method {
   $class->install_methods(%methods);
 }
 
-=head2 interface
+# ----------------------------------------------------------------------
 
-  interface => [ qw / foo bar baz / ]
+=head2 abstract
+
+  abstract => [ qw / foo bar baz / ]
+
+This creates a number of methods will die if called.  This is intended
+to support the use of abstract methods, that must be overidden in a
+useful subclass.
 
 =cut
 
 sub abstract {
   my ($class, @args) = @_;
   my %methods;
-  
-  $class->get_target_class;
+
+  my $TargetClass = $class->find_target_class;
 
   foreach (@args) {
     my $field = $_;
@@ -1186,6 +1605,7 @@ sub abstract {
   $class->install_methods(%methods);
 }
 
+# ----------------------------------------------------------------------
 
 =head1 ADDDING NEW METHOD TYPES
 
@@ -1215,12 +1635,12 @@ upper_case_get_set might look like this:
       };
     %results;
   }
-  
+
   1;
 
 =head1 VERSION
 
-Class::MethodMaker v0.92
+Class::MethodMaker v0.93
 
 =cut
 
@@ -1231,9 +1651,8 @@ sub builtin_class {
   my @list = @$arg;
   my %results = ();
   my $field;
-  
-  $class->get_target_class;
 
+  my $TargetClass = $class->find_target_class;
   my $struct_fields =
     $StructFields{$TargetClass};
 
@@ -1257,7 +1676,7 @@ sub builtin_class {
       my ($self) = @_;
       map { ($_, $self->$_()) } @$struct_fields;
     };
-  
+
   foreach $field (@list) {
     my $sfp = $StructPos{$TargetClass}++;
         # $struct_pos a global declared at top of file. We need to make
@@ -1278,29 +1697,3 @@ sub builtin_class {
   }
   $class->install_methods(%results);
 }
-
-sub method_maker {
-  # This is crazy!!!
-  my ($class, %args) = @_;
-  my %methods;
-  $class->set_target_class(caller);
-
-  foreach (keys %args) {
-    my $field = $_;
-    my $sub = $args{$_};
-    $methods{$field} = sub {
-      my ($c, @a) = @_;
-      my %m;
-
-      foreach (@a) {
-	my $f = $_;
-	$m{$f} = $sub;
-      }
-      $c->install_methods(%m);
-    }
-  }
-  $class->install_methods(%methods);
-  $class->set_target_class(undef);
-}
-
-

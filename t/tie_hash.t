@@ -1,18 +1,31 @@
 #!/usr/local/bin/perl
 
+package Y;
+
+sub new { bless {}, shift; }
+sub foo { $_[0]->{foo} = $_[1] if $#_; $_[0]->{foo} }
+
 package X;
 
 use lib qw ( ./t );
 use Test;
+use Tie::RefHash;
 
 use Class::MethodMaker
-  hash => [ qw / a b / ],
-  hash => 'c';
+  tie_hash => [
+	       a => {
+		     tie	=> qw/ Tie::RefHash /,
+		     args => [],
+		    },
+	       b => {
+		     tie	=> qw/ Tie::RefHash /,
+		     args => [],
+		    },
+	      ];
 
 sub new { bless {}, shift; }
 my $o = new X;
 
-# 1--7
 TEST { 1 };
 TEST { ! scalar keys %{$o->a} };
 TEST { ! defined $o->a('foo') };
@@ -24,7 +37,6 @@ TEST {
   $l[0] eq 'baz' and $l[1] eq 'baz2'
 };
 
-# 8--9
 TEST { $o->a(qw / a b c d / ) };
 TEST {
   my @l = sort keys %{$o->a};
@@ -34,7 +46,6 @@ TEST {
   $l[3] eq 'foo'
 };
 
-# 10
 TEST {
   my @l = sort $o->a_keys;
   $l[0] eq 'a' and
@@ -43,7 +54,6 @@ TEST {
   $l[3] eq 'foo'
 };
 
-# 11
 TEST {
   my @l = sort $o->a_values;
   $l[0] eq 'b' and
@@ -52,7 +62,8 @@ TEST {
   $l[3] eq 'd'
 };
 
-# 12--13
+TEST { $o->as eq $o->a };
+
 TEST { $o->b_tally(qw / a b c a b a d / ); };
 TEST {
   my %h = $o->b;
@@ -62,25 +73,13 @@ TEST {
   $h{'d'} == 1
 };
 
-# 14--18
-TEST { $o->c('foo', 'bar') };
-TEST { $o->c('foo') eq 'bar' };
-TEST { 1 };
-TEST { $o->c_delete('foo'); ! defined $o->c('foo') };
-TEST { $o->c };
-
+# Test use of tie...
 TEST {
-  $o->c(qw / a b c d e f /);
-  my %h = $o->c;
-  $h{'a'} eq 'b' and
-  $h{'c'} eq 'd' and
-  $h{'e'} eq 'f'
-};
-
-TEST {
-  $o->c_delete(qw / a c /);
-  my %h = $o->c;
-  $h{'e'} eq 'f'
+  my $y1 = new Y;
+  my $y2 = new Y;
+  $y2->foo ("test");
+  $o->b ( $y1 => $y2 );
+  $o->b ($y1)->foo eq "test";
 };
 
 exit 0;

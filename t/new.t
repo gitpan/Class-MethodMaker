@@ -60,5 +60,13 @@ TEST { $bar_called };
 TEST { $o->foo == 123 };
 TEST { $o->bar == 456 };
 
+# new_hash_init (taking hashref)
+TEST { $o = X->new_hash_init({ 'foo' => 123, 'bar' => 456 }) };
+TEST { ref $o eq 'X'; };
+TEST { $foo_called };
+TEST { $bar_called };
+TEST { $o->foo == 123 };
+TEST { $o->bar == 456 };
+
 exit 0;
 

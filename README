@@ -2,8 +2,9 @@ NAME
     Class::MethodMaker - a module for creating generic methods
 
 SYNOPSIS
-    use Class::MethodMaker new_with_init => 'new', get_set => [ qw /foo bar
-    baz / ];
+      use Class::MethodMaker
+        new_with_init => 'new',
+        get_set       => [ qw /foo bar baz / ];
 
 DESCRIPTION
     This module solves the problem of having to write a bazillion get/set
@@ -12,6 +13,19 @@ DESCRIPTION
     and whose values tell method maker what methods to make. (More
     precisely, the keys are the names of MethodMaker methods (methods that
     write methods) and the values are the arguments to those methods.
+
+AUTHOR
+    (Original) Peter Seibel (Organic Online).
+
+    Evolution Online Systems, Inc. http://www.evolution.com
+
+    Current Maintainer: Martyn J. Pearce fluffy@engineer.com
+
+SEE ALSO
+
+
+VERSION
+    Class::MethodMaker v0.93
 
 SUPPORTED METHOD TYPES
   new
@@ -26,7 +40,6 @@ SUPPORTED METHOD TYPES
           my $self = {};
           bless $self, $class;
         }
-
 
   new_with_init
 
@@ -45,7 +58,6 @@ SUPPORTED METHOD TYPES
           $self;
         }
 
-
   new_hash_init
 
     Creates a basic constructor which accepts a hash of slot-name/value
@@ -55,13 +67,17 @@ SUPPORTED METHOD TYPES
     those methods.
 
     Takes a single string or a reference to an array of strings as its
-    argument. For each string creates a method of the form listed below.
-    Note that this method can be called on an existing objec, which allows
-    it to be combined with new_with_init (see above) to provide some default
-    values. (Basically, declare a new_with_init method, say 'new' and a
-    new_hash_init method, for example, 'hash_init' and then in the init
-    method, you can call modify or add to the %args hash and then call
-    hash_init.)
+    argument. For each string creates a method that takes a list of
+    arguments that is treated as a set of key-value pairs, with each such
+    pair causing a call `$self->key ($value)'.
+
+    This method may be called as a class method, causing a new instance to
+    be created, or as an instance method, which will operate on the subject
+    instance. This allows it to be combined with new_with_init (see above)
+    to provide some default values. For example, declare a new_with_init
+    method, say 'new' and a new_hash_init method, for example, 'hash_init'
+    and then in the init method, you can call modify or add to the %args
+    hash and then call hash_init.
 
         sub <string> {
           my ($class, %args) = @_;
@@ -73,23 +89,16 @@ SUPPORTED METHOD TYPES
           $self;
         }
 
-
   get_set
 
     Takes a single string or a reference to an array of strings as its
     argument. For each string, x creates two methods:
 
-      sub x {
-        my ($self, $new) = @_;
-        defined $new and $self->{$name} = $new;
-        $self->{$name};
-      }
+    x   If an argument is provided, sets a new value for x. Returns (new)
+        value. Value defaults to undef.
 
-      sub clear_x
-        my ($self) = @_;
-        $self->{$name} = undef;
-      }
-
+    clear_x
+        Sets value to undef. No return.
 
     This is your basic get/set method, and can be used for slots containing
     any scalar value, including references to non-scalar data. Note,
@@ -99,25 +108,23 @@ SUPPORTED METHOD TYPES
 
   get_concat
 
-    Like get_set except sets don't clear out the original value, but instead
-    concatenate the new value to the existing one. Thus these slots are only
-    good for plain scalars. Also, like get_set, defines clear_foo method.
+    Like get_set except sets do not clear out the original value, but
+    instead concatenate the new value to the existing one. Thus these slots
+    are only good for plain scalars. Also, like get_set, defines clear_foo
+    method.
 
-  fields
+  grouped_fields
 
     Creates get/set methods like get_set but also defines a method which
     returns a list of the slots in the group.
 
-      fields => {
-                 group => 'group_name',
-                 slots => [ qw / slot1 slot2 / ]
-                }
+      grouped_fields methods
+        some_group => [ qw / field1 field2 field3 / ];
 
-
-    Takes a single hash-ref or a reference to an array of hash-refs as its
-    argument. Each hash-ref should have have the keys group and slots. The
-    group value is the name of the method which returns the list of slots
-    and the slots value should be an acceptable argument for get_set.
+    Its argument list is parsed as a hash of group-name => field-list pairs.
+    Get-set methods are defined for all the fields and a method with the
+    name of the group is defined which returns the list of fields in the
+    group.
 
   object
 
@@ -132,57 +139,103 @@ SUPPORTED METHOD TYPES
                              slot => 'foo',
                              comp_mthds => [ qw / bar baz / ]
                             },
+                   'Fob' => [
+                             {
+                              slot => 'dog',
+                              comp_mthds => 'bark',
+                             },
+                             {
+                              slot => 'cat',
+                              comp_mthds => 'miaow',
+                             },
+                            ];
                   ];
 
+    The main argument should be a reference to an array. The array should
+    contain pairs of class => sub-argument pairs. The sub-arguments parsed
+    thus:
 
-    This is a hairy one. The main argument should be a reference to an
-    array. The array should contain pairs of class => sub-argument pairs.
-    The sub-argument's are further parsed thusly:
+    Hash Reference
+        See `Baz' above. The hash should contain the following keys:
 
-    If the sub-argument is a simple string or a reference to an array of
-    strings (as is the case for Foo and Bar above), for each string a
-    get/set method is created that can store an object of that class. (The
-    get/set method, if called with a reference to an object of the given
-    class as the first argument, stores it in the slot. If the slot isn't
-    filled yet it creates an object by calling the given class's new method.
-    Any arguments passed to the get/set method are passed on to new. In all
-    cases the object now stored in the slot is returned.
+        slot
+            The name of the instance attribute (slot).
 
-    If the sub-argument is a ref to a hash (as with Baz, above) then the
-    hash should have two keys: slot and comp_mthds. The value indexed by
-    'slot' will be interpreted as the is in (a). The value or values (ref to
-    an array if plural) indexed by 'comp_mthds' are the names of methods
-    which should be "inherited" from the object stored in the slot. That is,
-    using the example above, a method, foo, is created in the class that
-    calls MethodMaker, which can get and set the value of a slot containing
-    an object of class Baz. Class Baz in turn defines two methods, 'bar',
-    and 'baz'. Two more methods are created in the class using MethodMaker,
+        comp_mthds
+            A stringor array ref, naming the methods that will be forwarded
+            directly to the object in the slot.
+
+    Array Reference
+        As for `String', for each member of the array. Also works if each
+        member is a hash reference (see `Fob' above).
+
+    String
+        The name of the instance attribute (slot).
+
+    For each method definition a get/set method is created that can store an
+    object of that class. (The get/set method, if called with a reference to
+    an object of the given class as the first argument, stores it in the
+    slot. If the slot is not filled yet it creates an object by calling the
+    given new method of the given class. Any arguments passed to the get/set
+    method are passed on to new. In all cases the object now stored in the
+    slot is returned.
+
+    So, using the example above, a method, `foo', is created in the class
+    that calls MethodMaker, which can get and set the value of those objects
+    in hash slot {'foo'}, which will generally contain an object of class
+    Baz. Two additional methods are created in the class using MethodMaker,
     named 'bar' and 'baz' which result in a call to the 'bar' and 'baz'
-    methods, through the Baz object stored in slot foo.
+    methods on the Baz object stored in slot foo.
+
+  object_list
+
+    Functions like `list', but maintains an array of referenced objects in
+    each slot. Forwarded methods return a list of the results returned by
+    `map'ing the method over each object in the array.
+
+    Arguments are like `object'.
+
+  forward
+
+      forward => [ comp => 'method1', comp2 => 'method2' ]
+
+    Define pass-through methods for certain fields. The above defines that
+    method `method1' will be handled by component `comp', whilst method
+    `method2' will be handled by component `comp2'.
 
   boolean
 
       boolean => [ qw / foo bar baz / ]
 
-
     Creates methods for setting, checking and clearing flags. All flags
     created with this meta-method are stored in a single vector for space
     efficiency. The argument to boolean should be a string or a reference to
-    an array of strings. For each string x it defines several methods: x,
-    set_x, and clear x. x returns the value of the x-flag. If called with an
-    argument, it first sets the x-flag to the truth-value of the argument.
-    set_x is equivalent to x(1) and clear_x is equivalent to x(0).
+    an array of strings. For each string x it defines several methods:
 
-    Additionally, boolean defines three class method: *bits*, which returns
-    the vector containing all of the bit fields (remember however that a
-    vector containing all 0 bits is still true), *boolean_fields*, which
-    returns a list of all the flags by name, and *bit_dump*, which returns a
-    hash of the flag-name/flag-value pairs.
+    x   Returns the value of the x-flag. If called with an argument, it
+        first sets the x-flag to the truth-value of the argument.
+
+    set_x
+        Equivalent to x(1).
+
+    clear_x
+        Equivalent to x(0).
+
+    Additionally, boolean defines three class methods:
+
+    bits
+        Returns the vector containing all of the bit fields (remember
+        however that a vector containing all 0 bits is still true).
+
+    boolean_fields
+        Returns a list of all the flags by name.
+
+    bit_dump
+        Returns a hash of the flag-name/flag-value pairs.
 
   listed_attrib
 
       listed_attrib => [ qw / foo bar baz / ]
-
 
     Like *boolean*, *listed_attrib* creates x, set_x, and clear_x methods.
     However, it also defines a class method x_objects which returns a list
@@ -194,7 +247,6 @@ SUPPORTED METHOD TYPES
   key_attrib
 
       key_attrib => [ qw / foo bar baz / ]
-
 
     Creates get/set methods like get/set but also maintains a hash in which
     each object is stored under the value of the field when the slot is set.
@@ -210,7 +262,6 @@ SUPPORTED METHOD TYPES
 
       key_with_create => [ qw / foo bar baz / ]
 
-
     Just like key_attrib except the find_x method is defined to call the new
     method to create an object if there is no object already stored under
     any of the keys you give as arguments.
@@ -219,32 +270,86 @@ SUPPORTED METHOD TYPES
 
     Creates several methods for dealing with slots containing list data.
     Takes a string or a reference to an array of strings as its argument and
-    for each string, x, creates the methods: x, push_x, and pop_x. The
-    method x returns the list of values stored in the slot. In an array
-    context it returns them as an array and in a scalar context as a
-    reference to the array. If called with arguments, x will push them onto
-    the list. push_x and pop_x do about what you would expect.
+    for each string, x, creates the methods:
+
+    x   This method returns the list of values stored in the slot. In an
+        array context it returns them as an array and in a scalar context as
+        a reference to the array.
+
+    push_x
+    pop_x
+    shift_x
+    unshift_x
+    splice_x
+    clear_x
+    count_x
+        Returns the number of elements in x.
 
   hash
 
     Creates a group of methods for dealing with hash data stored in a slot.
+
     Takes a string or a reference to an array of strings and for each
-    string, x, creates: x, x_keys, x_values, and x_tally. Called with no
-    arguments x returns the hash stored in the slot, as a hash in an array
-    context or as a refernce in a scalar context. Called with one argument
-    it treats the argument as a key and returns the value stored under that
-    key, or as a list of keys (if it is a reference to a list) and returns
-    the list of values stored under those keys. Called with more than one
-    argument, treats them as a series of key/value pairs and adds them to
-    the hash. x_keys returns the keys of the hash, and x_values returns the
-    list of values. x_tally takes a list of arguments and for each scalar in
-    the list increments the value stored in the hash and returns a list of
-    the current (after the increment) values.
+    string, x, creates:
+
+    x   Called with no arguments returns the hash stored in the slot, as a
+        hash in a list context or as a reference in a scalar context.
+
+        Called with one argument it treats the argument as a key and returns
+        the value stored under that key, or as a list of keys (if it is a
+        reference to a list) and returns the list of values stored under
+        those keys.
+
+        Called with more than one argument, treats them as a series of
+        key/value pairs and adds them to the hash.
+
+    x_keys
+        Returns the keys of the hash.
+
+    x_values
+        Returns the list of values.
+
+    x_tally
+        Takes a list of arguments and for each scalar in the list increments
+        the value stored in the hash and returns a list of the current
+        (after the increment) values.
+
+    x_exists
+        Takes a single key, returns whether that key exists in the hash.
+
+    x_delete
+        Takes a list, deletes each key from the hash.
+
+  tie_hash
+
+    Much like `hash', but uses a tied hash instead.
+
+    Takes a list of pairs, where the first is the name of the component, the
+    second is a hash reference. The hash reference recognizes the following
+    keys:
+
+    tie *Required*. The name of the class to tie to. *Make sure you have
+        `use'd the required class*.
+
+    args
+        *Required*. Additional arguments for the tie, as an array ref.
+
+    Example:
+
+       tie_hash     => [
+                        hits        => {
+                                        tie => qw/ Tie::RefHash /,
+                                        args => [],
+                                       },
+                       ],
+
+  static_hash
+
+    Much like `hash', but uses a class-based hash instead.
 
   code
 
       code => [ qw / foo bar baz / ]
-
 
     Creates a slot that holds a code reference. Takes a string or a
     reference to a list of string and for each string, x, creates a method x
@@ -256,15 +361,17 @@ SUPPORTED METHOD TYPES
 
       method => [ qw / foo bar baz / ]
 
-
     Just like code, except the code is called like a method, with $self as
     it's first argument. Basically, you're creating a method which can be
     different for each object. Which is sort of weird. But perhaps useful.
 
-  interface
+  abstract
 
-      interface => [ qw / foo bar baz / ]
+      abstract => [ qw / foo bar baz / ]
 
+    This creates a number of methods will die if called. This is intended to
+    support the use of abstract methods, that must be overidden in a useful
+    subclass.
 
 ADDDING NEW METHOD TYPES
     MethodMaker is a class that can be inherited. A subclass can define new
@@ -293,10 +400,5 @@ ADDDING NEW METHOD TYPES
           };
         %results;
       }
-      
+
       1;
-
-
-VERSION
-    Class::MethodMaker v0.9
-

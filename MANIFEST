@@ -1,8 +1,4 @@
-Changes
-MANIFEST
-Makefile.PL
 MethodMaker.pm
-README
 t/Test.pm
 t/abstract.t
 t/boolean.t
@@ -22,4 +18,9 @@ t/new.t
 t/object.t
 t/static_hash.t
 t/struct.t
-t/sugar.t
+t/object_list.t
+t/tie_hash.t
+Changes
+MANIFEST
+README
+Makefile.PL

@@ -10,13 +10,13 @@ sub new { bless {}, shift; }
 my $o = new X;
 
 TEST { 1 };
-TEST { $o->x eq "" };
+TEST { ! defined $o->x };
 TEST { $o->x('foo') };
 TEST { $o->x eq 'foo' };
 TEST { $o->x('bar') };
 TEST { $o->x eq 'foobar' };
 TEST { ! defined $o->clear_x };
-TEST { $o->x eq "" };
+TEST { ! defined $o->x };
 
 exit 0;
 

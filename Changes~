@@ -1,11 +1,5 @@
 Revision history for Perl extension Class::MethodMaker.
 
-0.93  Documentation update.  Various bug fixes.  Added object list
-      (courtesy of Evolution Online Software).  Update get_concat to
-      utilize a join field.  Remove some undocumented code.  Added
-      tie_hash type.  Update tests, add in some for new types, remove
-      tests for undocumented features.  Released March 2000.
-
 0.92  Added regression tests, originally written to exercise 0.91 and
       then moved to a restructured MethodMaker.pm. One meta-method,
       fields() was abandoned, and replaced with a different meta_method,

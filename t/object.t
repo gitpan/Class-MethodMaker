@@ -18,14 +18,16 @@ use Class::MethodMaker
   object  => [
 	      'Y' => 'a',
 	      'Y' => [ qw / b c d / ],
-	      'Y' => {
-		      slot => 'e',
-		      forward => [ qw / foo / ],
-		     },
-	      'Y' => {
-		      slot => 'f',
-		      comp_mthds => [ qw / bar / ],
-		     },
+	      'Y' => [
+		      {
+		       slot => 'e',
+		       comp_mthds => [ qw / foo / ],
+		      },
+		      {
+		       slot => 'f',
+		       comp_mthds => [ qw / bar / ],
+		      }
+		     ],
 	     ];
 
 sub new { bless {}, shift; }
@@ -50,6 +52,4 @@ TEST { $o->bar eq 'bar' };
 TEST { $o->e->foo eq $o->foo };
 
 exit 0;
-
-
 
