@@ -34,3 +34,4 @@ README
 MANIFEST
 MANIFEST.SKIP
 make.pm
+t/static_list.t

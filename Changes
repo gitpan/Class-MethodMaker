@@ -1,5 +1,13 @@
 Revision history for Class-MethodMaker.
 
+1.07  Tue Oct  1  7:04AM GMT 2002
+	- make make.pm 5.005_03 friendly (patches courtesy of Ed Avis, 
+	  <ed@membled.com>)
+	- Document implementation of default values with new_hash_init
+	  (courtesy of Kevin J. Rice, <kevin@justanyone.com>)
+	- Add static_list
+	- Remove deprecated push action from list() methods
+
 1.06  Fri May 31  7:15AM GMT 2002
 	- Don't perform make self-checks by default
 

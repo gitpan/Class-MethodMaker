@@ -62,7 +62,7 @@ use vars qw( @ISA );
 use Carp qw( carp cluck croak );
 
 use vars qw( $VERSION $PACKAGE );
-$VERSION = '1.06';
+$VERSION = '1.07';
 $PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------
@@ -289,6 +289,33 @@ hash and then call hash_init.
 I<Note that the operation with regard to action on an instance differs
 to that of C<new> and C<new_with_init> differently with regard to being
 called on an instance.>
+
+You may want to work with this to support default values.  The following
+snippet is one way of doing this (adapted from code supplied by
+Kevin J. Rice):
+
+  package Simple;
+
+  use Class::MethodMaker
+    get_set       => [qw(a b)],
+    new_with_init => 'new';
+    new_hash_init => 'hash_init';
+
+  use constant INSTANCE_DEFAULTS => (a => 7, b => 'default') ;
+
+  sub init  {
+    my $self   = shift;
+    my %values = (INSTANCE_DEFAULTS, @_);
+    $self->hash_init(%values);
+    return;
+  }
+
+Now, back at the farm...
+
+  use Simple;
+  my $test = Simple->new;             # now a==7, b==default
+  my $test = Simple->new(a=>1);       # now a==1, b==default.
+  my $test = Simple->new(a=>1, b=>2); # now a==1, b==2.
 
 =cut
 
@@ -1652,7 +1679,7 @@ sub list {
         my ($self, @list) = @_;
         defined $self->{$field} or $self->{$field} = [];
         #
-        # Push of arguments deprecated.  Later, the semanticmay
+        # Push of arguments deprecated.  Later, the semantic may
         # change (likely to replace, rather than push onto, the list).
         #
 
@@ -1660,7 +1687,9 @@ sub list {
 
         # This code is deprecated.  Use at your peril.  It is not
         # supported, and will disappear at or after 25.v.01
-        push @{$self->{$field}}, map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list;
+
+        # XXX Removed 1.x.02 ------------
+        # push @{$self->{$field}}, map { ref $_ eq 'ARRAY' ? @$_ : ($_) } @list;
 
         # XXX Deprecated 25.v.00 ---------
 
@@ -1676,6 +1705,102 @@ sub list {
       sub {
         my ($self) = @_;
         $self->{$field};
+      };
+
+  }
+  $class->install_methods(%methods);
+}
+
+# -------------------------------------
+
+sub static_list {
+  my ($class, @args) = @_;
+  my %methods;
+
+  foreach (@args) {
+    my $field = $_;
+    my @storage;
+
+    $methods{$field} =
+      sub {
+        return wantarray ? @storage : \@storage;
+      };
+
+
+  $methods{"${field}_pop"} =
+      sub {
+        pop @storage;
+      };
+
+  $methods{"${field}_push"} =
+      sub {
+        my $class = shift;
+        my @values = @_;
+        push @storage, @values;
+      };
+
+  $methods{"${field}_shift"} =
+      sub {
+        shift @storage;
+      };
+
+  $methods{"${field}_unshift"} =
+      sub {
+        my $class = shift;
+        my @values = @_;
+        unshift @storage, @values;
+      };
+
+  $methods{"${field}_splice"} =
+      sub {
+        my $class = shift;
+        my ($offset, $len, @list) = @_;
+        splice(@storage, $offset, $len, @list);
+      };
+
+  $methods{"${field}_clear"} =
+      sub {
+        @storage = ();
+      };
+
+  $methods{"${field}_count"} =
+      sub {
+        return scalar @storage;
+      };
+
+  $methods{"${field}_index"} =
+      sub {
+        my $class = shift;
+        my (@indices) = @_;
+        my @Result;
+        push @Result, $storage[$_]
+          for @indices;
+        return $Result[0] if @_ == 1;
+        return wantarray ? @Result : \@Result;
+      };
+
+  foreach my $method_name ("${field}_set") {
+    $methods{$method_name} =
+      sub {
+        my $class = shift;
+        my @args = @_;
+        croak "$method_name expects an even number of fields\n"
+          if @args % 2;
+        while ( my ($index, $value) = splice @args, 0, 2 ) {
+          $storage[$index] = $value;
+        }
+        return @_ / 2;          # required for object_list
+      };
+  }
+
+
+    #
+    # Deprecated. v0.95 1.vi.00
+    #
+    $methods{"${field}_ref"} =
+      sub {
+        my ($class) = @_;
+        \@storage;
       };
 
   }
@@ -1719,7 +1844,7 @@ sub tie_list
               sub
                 {
                   my $self = shift;
-                  my @list = @_;
+                  # my @list = @_;
 
                   if ( ! defined $self->{$field} )
                     {

@@ -1,8 +1,7 @@
 # (X)Emacs mode: -*- cperl -*-
 
-use 5.005_62;
+use 5.005;
 use strict;
-use warnings;
 
 =head1 NAME
 
@@ -218,10 +217,10 @@ E.g.,
 =cut
 
 use Config                   qw( %Config );
-use Env                      qw( @PATH );
-use ExtUtils::MakeMaker 5.45 qw( WriteMakefile );
+use ExtUtils::MakeMaker      qw( WriteMakefile );
 use File::Find               qw( find );
-use File::Spec::Functions    qw( catfile );
+use File::Spec               qw( );
+sub catfile { File::Spec->catfile(@_) }
 
 
 # Constants ---------------------------
@@ -247,7 +246,7 @@ use constant CONFIG =>
                    my ($name) = @_;
                    my $exec;
                  PATH_COMPONENT:
-                   for my $path (@PATH) {
+                   for my $path (split /:/, $ENV{PATH}) {
                      my $try = catfile $path, $name;
                      if ( -x $try ) {
                        $exec = $try;
@@ -265,7 +264,7 @@ use constant CONFIG =>
                    my $rv = $? >> 8;
                    die sprintf "Command $cmd exited with value: $rv\n"
                      if $rv != $expect;
-                   if ( $vstr =~ /(?:^|\D)(\d+[\._]\d+)(?!\d)/ ) {
+                   if ( $vstr =~ /(?:^|\D)v?(\d+(?:[._]\d+)+)(?![\d_.])/ ) {
                      (my $version = $1) =~ tr/_/./;
                      return $version;
                    } else {
@@ -329,8 +328,6 @@ sub check {
       for grep ! exists $item->{$_}, keys %$defaults;
     my ($name, $pkg, $vers, $vopt, $vexpect) =
       @{$item}{qw( name package version vopt vexpect)};
-    # Handle multiple '.'s in versions
-    defined $vers && $vers  =~ s!\.(\d+)\.!.$1!g;
 
     printf STDERR "Checking for %${type_max}s %s...", $type, $name
       if $verbose;
@@ -340,7 +337,8 @@ sub check {
 
       if ( defined $vers ) {
         my $vfound = CONFIG->{$type}->{vers}->($name, $vopt, $vexpect);
-
+        my $str_v_reqd  = join '_', map sprintf('%09d',$_), split /\./,$vers;
+        my $str_v_found = join '_', map sprintf('%09d',$_), split /\./,$vfound;
         push @missing, { type     => $type,
                          name     => $name,
                          package  => $pkg,
@@ -349,7 +347,7 @@ sub check {
                          optional => $item->{optional},
                          message  => $item->{message},
                        }
-          if $vers > $vfound;
+          if $str_v_reqd gt $str_v_found;
       }
     } else {
       print STDERR " failed\n"
@@ -405,7 +403,6 @@ if ( $ENV{MAKE_SELF_TEST} ) {
       and die "Internal Check (8) failed\n";
   }
 }
-
 # -------------------------------------
 
 my @missing;
@@ -435,6 +432,8 @@ exit 2
 
 my %pm;
 find (sub {
+        $File::Find::prune = 1, return
+          if -d $_ and $_ eq 'CVS';
         return unless /\.pm$/;
         (my $target = $File::Find::name) =~
           s/^$File::Find::topdir/\$(INST_LIBDIR)/;

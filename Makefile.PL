@@ -1,6 +1,7 @@
 require 5.00307;
 
-use File::Spec::Functions qw( catfile );
+use File::Spec;
+sub catfile { File::Spec->catfile(@_) }
 
 use constant MOD_REQS =>
   [

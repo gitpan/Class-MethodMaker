@@ -3,27 +3,31 @@
 package X;
 
 use lib qw ( ./t );
+use Data::Dumper;
 use Test;
 
 use Class::MethodMaker
-  list => [ qw / a b / ],
-  list => 'c';
+  static_list => [ qw / a b / ],
+  static_list => 'c';
 
 sub new { bless {}, shift; }
 my $o = new X;
+my $o2 = new X;
 
 # 1--6
 TEST { 1 };
 TEST { ! scalar @{$o->a} };
-TEST { $o->push_a(123, 456) };
-TEST { $o->unshift_a('baz') };
-TEST { $o->pop_a == 456 };
-TEST { $o->shift_a eq 'baz' };
+TEST { $o->a_push(123, 456) };
+TEST { $o->a_unshift('baz') };
+TEST { $o->a_pop == 456 };
+TEST { $o->a_shift eq 'baz' };
 
 #7--8
 TEST { $o->b_push(123, 'foo', [ qw / a b c / ], 'bar') };
 TEST {
   my @l = $o->b;
+  print STDERR Data::Dumper->Dump([\@l],['l'])
+    if exists $ENV{TEST_DEBUG} && $ENV{TEST_DEBUG};
   $l[0] == 123 and
   $l[1] eq 'foo' and
   $l[2]->[0] eq 'a' and
@@ -34,8 +38,10 @@ TEST {
 
 # 9
 TEST {
-  $o->splice_b(1, 2, 'baz');
+  $o->b_splice(1, 2, 'baz');
   my @l = $o->b;
+  print STDERR Data::Dumper->Dump([\@l],['l'])
+    if exists $ENV{TEST_DEBUG} && $ENV{TEST_DEBUG};
   $l[0] == 123 and
   $l[1] eq 'baz' and
   $l[2] eq 'bar'
@@ -43,10 +49,10 @@ TEST {
 
 # 10--12
 TEST { ref $o->b_ref eq 'ARRAY' };
-TEST { ! scalar @{$o->clear_b} };
+TEST { ! scalar @{$o->b_clear} };
 TEST { ! scalar @{$o->b} };
 
-$o->b_unshift (qw/ a b c /);
+$o->b_unshift(qw/ a b c /);
 my @x = $o->b_index (2, 1, 1, 2);
 # 13--15
 TEST { @x == 4 };
@@ -64,7 +70,9 @@ TEST { $x[2] eq 'c' };
 eval {
   $o->b_set ( 0 => 'e', 1 );
 };
-# 20
+# 20--21
 TEST { $@ };
+TEST { $o->a eq $o2->a };
+
 exit 0;
 
