@@ -1,5 +1,9 @@
 Revision history for Perl extension Class::MethodMaker.
 
+0.94  Added static_get_set, and hashref arg handling to hash & 
+      static_hash; all courtesy of Matthew Persico.  Slight cleaning.
+      Added more ideas to `TODO' list.
+
 0.93  Documentation update.  Various bug fixes.  Added object list
       (courtesy of Evolution Online Software).  Update get_concat to
       utilize a join field.  Remove some undocumented code.  Added

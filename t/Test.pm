@@ -1,7 +1,7 @@
 package Test;
 
 #
-# $Id: Test.pm,v 1.1 2000/02/29 09:47:36 recoil Exp $
+# $Id: Test.pm,v 1.1 2000/04/26 04:29:41 recoil Exp $
 #
 
 # COPYRIGHT NOTICE

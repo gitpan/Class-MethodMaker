@@ -35,11 +35,19 @@ TEST {
 };
 
 TEST {
+  my %h=('w' => 'x', 'y' => 'z');
+  my $rh = \%h;
+  my $r = $o->a($rh);
+};
+
+TEST {
   my @l = sort $o->a_keys;
   $l[0] eq 'a' and
   $l[1] eq 'bar' and
   $l[2] eq 'c' and
-  $l[3] eq 'foo'
+  $l[3] eq 'foo' and
+  $l[4] eq 'w' and
+  $l[5] eq 'y'
 };
 
 TEST {
@@ -47,10 +55,10 @@ TEST {
   $l[0] eq 'b' and
   $l[1] eq 'baz' and
   $l[2] eq 'baz2' and
-  $l[3] eq 'd'
+  $l[3] eq 'd' and
+  $l[4] eq 'x' and
+  $l[5] eq 'z'
 };
-
-TEST { $o->as eq $o->a };
 
 TEST { $o->b_tally(qw / a b c a b a d / ); };
 TEST {
@@ -61,25 +69,8 @@ TEST {
   $h{'d'} == 1
 };
 
-TEST { $o->add_c('foo', 'bar') };
-TEST { $o->c('foo') eq 'bar' };
-TEST { $o->clear_c('foo') eq 'bar' };
 TEST { ! defined $o->c('foo') };
 TEST { defined $o->c };
-
-TEST {
-  $o->add_cs(qw / a b c d e f /);
-  my %h = $o->c;
-  $h{'a'} eq 'b' and
-  $h{'c'} eq 'd' and
-  $h{'e'} eq 'f'
-};
-
-TEST {
-  $o->clear_cs(qw / a c /);
-  my %h = $o->c;
-  $h{'e'} eq 'f'
-};
 
 TEST { $o->a eq $o2->a };
 

@@ -3,12 +3,12 @@ t/Test.pm
 t/abstract.t
 t/boolean.t
 t/code.t
-t/fields.t.broken
 t/find_test
 t/get_concat.t
 t/get_set.t
 t/grouped_fields.t
 t/hash.t
+t/hash_of_lists.t
 t/key_attrib.t
 t/key_with_create.t
 t/list.t
@@ -16,9 +16,10 @@ t/listed_attrib.t
 t/method.t
 t/new.t
 t/object.t
+t/object_list.t
+t/static_get_set.t
 t/static_hash.t
 t/struct.t
-t/object_list.t
 t/tie_hash.t
 Changes
 MANIFEST

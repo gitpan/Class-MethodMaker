@@ -1,19 +1,36 @@
 package Class::MethodMaker;
 
 #
-# $Id: MethodMaker.pm,v 1.21 2000/03/23 19:38:25 recoil Exp $
+# $Id: MethodMaker.pm,v 1.4 2000/05/11 06:12:26 recoil Exp $
 #
+
+# Copyright (c) 2000 Martyn J. Pearce.  This program is free software;
+# you can redistribute it and/or modify it under the same terms as Perl
+# itself.
+
+# Copyright 1998, 1999, 2000 Evolution Online Systems, Inc.  You may use
+# this software for free under the terms of the MIT License.  More info
+# posted at http://www.evolution.com, or contact info@evolution.com
 
 # Copyright (c) 1996 Organic Online. All rights reserved. This program is
 # free software; you can redistribute it and/or modify it under the same
 # terms as Perl itself.
 
 ## TODO:
+# Make pop, unshift default to first element of all keys.  Include undefs in list. ?  No, this is easily assimable by the client using $x->keys.
+# Check for consistency that that of the above use of keys.  I.e., does $o->x for hash_of_lists do a keys thing in the empty case that's pointless?
 # Use Pseudohashes ?
+# Synchronize static_hash with hash
+# Add new-style list methods.
+# Add int type.
+# ?? Add callback possibility into procedures? Maybe use ties?
+# Deprecate verb_x methods
+# Add object exists method (to non-auto-create)
+# Make list methods consistent with hash_of_lists methods, in action, and in name (x_verb).  Also for others (e.g., set_ clear_ boolean)
+# Add renaming forwarding (i.e., forward x->foo as x->y->bar) and arg reordering (i.e., x->foo (a,b,c) as x->y->bar (b,a))
 # Prefix internal names with '__' ?
 # Is struct still useful ?
-# Add caching values (scalar, list, etc.)
-# Add hash of lists
+# Add caching (memoizing) values (scalar, list, etc.)
 # Autoexpansion of array refs in list basic method is a gotcha if you're
 # trying to insert arrayrefs into the list
 ## From M. Simon Cavallet
@@ -35,9 +52,9 @@ B<Class::MethodMaker> - a module for creating generic methods
 
 =head1 SYNOPSIS
 
-use Class::MethodMaker
-  new_with_init => 'new',
-  get_set       => [ qw /foo bar baz / ];
+  use Class::MethodMaker
+    new_with_init => 'new',
+    get_set       => [ qw /foo bar baz / ];
 
 =head1 DESCRIPTION
 
@@ -48,15 +65,33 @@ whose values tell method maker what methods to make. (More precisely, the
 keys are the names of MethodMaker methods (methods that write methods)
 and the values are the arguments to those methods.
 
+=head1	AUTHOR
+
+(Original) Peter Seibel (Organic Online).
+
+Evolution Online Systems, Inc. http://www.evolution.com
+
+Current Maintainer: Martyn J. Pearce fluffy@engineer.com
+
+=head1	SEE ALSO
+
+Z<>
+
 =cut
 
 use strict;
 require 5.00307; # for the ->isa method.
-use Carp;
+use Carp qw( carp cluck croak );
 
 use AutoLoader;
 use vars '@ISA';
 @ISA = qw ( AutoLoader );
+
+=head1 VERSION
+
+Class::MethodMaker v0.93
+
+=cut
 
 use vars '$VERSION';
 $VERSION = "0.93";
@@ -328,6 +363,57 @@ sub get_set {
   }
   $class->install_methods(%methods);
 }
+
+# ----------------------------------------------------------------------
+
+=head2 static_get_set
+
+Like L<get_set>,takes a single string or a reference to an array of
+strings as its argument. For each string, x creates two methods:
+
+=over 4
+
+=item	x
+
+If an argument is provided, sets a new value for x.
+Returns (new) value.
+Value defaults to undef.
+
+=item	clear_x
+
+Sets value to undef.
+No return.
+
+=back
+
+The difference between this and  L<get_set> is that these scalars are
+shared across all instances of your object in your process.
+
+=cut
+
+sub static_get_set {
+  my ($class, @args) = @_;
+  my %methods;
+
+  foreach (@args) {
+    my $name = $_;
+    my $scalar;
+
+    $methods{$name} = sub {
+      my ($self, $new) = @_;
+      defined $new and $scalar = $new;
+      $scalar;
+    };
+
+    $methods{"clear_$name"} = sub {
+      my ($self) = @_;
+      $scalar = undef;
+    };
+  }
+
+  $class->install_methods(%methods);
+}
+
 
 # ----------------------------------------------------------------------
 
@@ -1180,9 +1266,15 @@ string, x, creates:
 Called with no arguments returns the hash stored in the slot, as a hash
 in a list context or as a reference in a scalar context.
 
-Called with one argument it treats the argument as a key and returns the
-value stored under that key, or as a list of keys (if it is a reference
-to a list) and returns the list of values stored under those keys.
+Called with one simple scalar argument it treats the argument as a key
+and returns the value stored under that key.
+
+Called with one array (list) reference argument, the array elements
+are considered to be be keys of the hash. x returns the list of values
+stored under those keys (also known as a I<hash slice>.)
+
+Called with one hash reference argument, the keys and values of the
+hash are added to the hash.
 
 Called with more than one argument, treats them as a series of key/value
 pairs and adds them to the hash.
@@ -1225,11 +1317,25 @@ sub hash {
 	my ($self, @list) = @_;
 	defined $self->{$field} or $self->{$field} = {};
 	if (scalar @list == 1) {
-	  my $key = shift @list;
-	  if (ref $key eq 'ARRAY') {
-	    return @{$self->{$field}}{@$key};
-	  } else {
-	    return $self->{$field}->{$key};
+	  my ($key) = @list;
+
+	  if ( my $type = ref $key ) {
+	    if ( $type eq 'ARRAY' ) {
+	      return @{$self->{$field}}{@$key};
+	    } elsif ( $type eq 'HASH' ) {
+	      while (my ($subkey, $value) = each %$key ) {
+		if ( $^W ) {
+		  defined $value
+		    or carp "No value for key $subkey of hash $field.";
+		}
+		$self->{$field}->{$subkey} = $value;
+	      }
+	      return wantarray ? %{$self->{$field}} : $self->{$field};
+	    } else {
+	      cluck "Not a recognized ref type for hash method: $type.";
+	    }
+	  } else { # $key is simple scalar
+	      return $self->{$field}->{$key};
 	  }
 	} else {
 	  while (1) {
@@ -1239,7 +1345,7 @@ sub hash {
 	    defined $value or carp "No value for key $key.";
 	    $self->{$field}->{$key} = $value;
 	  }
-	  wantarray ? %{$self->{$field}} : $self->{$field};
+	  return wantarray ? %{$self->{$field}} : $self->{$field};
 	}
       };
 
@@ -1277,6 +1383,302 @@ sub hash {
       };
   }
   $class->install_methods(%methods);
+}
+
+# ----------------------------------------------------------------------
+
+=head2 hash_of_lists
+
+Creates a group of methods for dealing with list data stored by key in a
+slot.
+
+Takes a string or a reference to an array of strings and for each
+string, x, creates:
+
+=over 4
+
+=item	x
+
+Returns all the values for all the given keys, in order.  If no keys are
+given, returns all the values (in an unspecified key order).
+
+The result is returned as an arrayref in scalar context.  This arrayref
+is I<not> part of the data structure; messing with it will not affect
+the contents directly (even if a single key was provided as argument.)
+
+If any argument is provided which is an arrayref, then the members of
+that array are used as keys.  Thus, the trivial empty-key case may be
+utilized with an argument of [].
+
+=item 	x_keys
+
+Returns the keys of the hash.  As an arrayref in scalar context.
+
+=item	x_exists
+
+Takes a list of keys, and returns whether each key exists in the hash
+(i.e., the C<and> of whether the individual keys exist).
+
+=item	x_delete
+
+Takes a list, deletes each key from the hash.
+
+=item	x_push
+
+Takes a key, and some values.  Pushes the values onto the list denoted
+by the key.  If the first argument is an arrayref, then each element of
+that arrayref is treated as a key and the elements pushed onto each
+appropriate list.
+
+=item	x_pop
+
+Takes a list of keys, and pops each one.  Returns the list of popped
+elements.  undef is returned in the list for each key that is has an
+empty list.
+
+=item	x_unshift
+
+Like push, only the from the other end of the lists.
+
+=item	x_shift
+
+Like pop, only the from the other end of the lists.
+
+=item	x_splice
+
+Takes a key, offset, length, and a values list.  Splices the list named
+by the key.  Anything from the offset argument (inclusive) may be
+omitted.  See L<perlfunc/splice>.
+
+=item	x_clear
+
+Takes a list of keys.  Resets each named list to empty (but does not
+delete the keys.)
+
+=item	x_count
+
+Takes a list of keys.  Returns the sum of the number of elements for
+each named list.
+
+=item	x_index
+
+Takes a key, and a list of indices.  Returns a list of each item at the
+corresponding index in the list of the given key.  Uses undef for
+indices beyond range.
+
+=item	x_remove
+
+Takes a key, and a list of indices.  Removes each corresponding item
+from the named list.  The indices are effectively looked up at the point
+of call --- thus removing indices 3, 1 from list (a, b, c, d) will
+remove (d) and (b).
+
+=item	x_sift
+
+Takes a key, and a set of named arguments, which may be a list or a hash
+ref.  Removes list members based on a grep-like approach.
+
+=over 4
+
+=item	filter
+
+The filter function used (as a coderef).  Is passed two arguments, the
+value compared against, and the value in the list that is potential for
+grepping out.  If returns true, the value is removed.  Default:
+
+  sub { $_[0] == $_[1] }
+
+=item	keys
+
+The list keys to sift through (as an arrayref).  Unknown keys are
+ignored.  Default: all the known keys.
+
+=item	values
+
+The values to sift out (as an arrayref).  Default: C<[undef]>
+
+=back
+
+=back
+
+=cut
+
+sub hash_of_lists {
+  my ($class, @args) = @_;
+  my %methods;
+
+  foreach (@args) {
+    my $field = $_;
+
+    $methods{$field} =
+      sub {
+	my ($self, @list) = @_;
+	# defined $self->{$field} or $self->{$field} = {};
+
+	my @Result;
+
+	if ( @list ) {
+	  if ( @list == 1 and ref ($list[0]) eq 'ARRAY' ) {
+	    @Result = map @$_, @{$self->{$field}}{@{$list[0]}};
+	  } else {
+	    my @keys =
+	      map ref ($_) eq 'ARRAY' ? @$_: $_,
+	        grep exists $self->{$field}{$_}, @list;
+	    @Result = map @$_, @{$self->{$field}}{@keys};
+	  }
+	} else {
+	  @Result = map @$_, values %{$self->{$field}};
+	}
+
+	return wantarray ? @Result : \@Result;
+      };
+
+    $methods{$field . "_keys"} =
+      sub {
+	my ($self) = shift;
+	my @Result = keys %{$self->{$field}};
+	return wantarray ? @Result : \@Result;
+      };
+
+    $methods{$field . "_exists"} =
+      sub {
+	my ($self) = shift;
+	my (@keys) = @_;
+	my $found = exists $self->{$field};
+	$found &&= exists $self->{$field}->{$_}
+	  for @keys;
+	return $found;
+      };
+
+    $methods{$field . "_delete"} =
+      sub {
+	my ($self, @keys) = @_;
+	delete @{$self->{$field}}{@keys};
+      };
+
+    $methods{$field . "_push"} =
+      sub {
+	my ($self, $key, @values) = @_;
+	my @keys = ref ($key) eq 'ARRAY' ? @$key : $key;
+	push @{$self->{$field}{$_}}, @values
+	  for @keys;
+      };
+
+    $methods{$field . "_unshift"} =
+      sub {
+	my ($self, $key, @values) = @_;
+	my @keys = ref ($key) eq 'ARRAY' ? @$key : $key;
+	unshift @{$self->{$field}{$_}}, @values
+	  for @keys;
+      };
+
+    $methods{$field . "_pop"} =
+      sub {
+	my ($self, @keys) = @_;
+	my @old;
+	push @old, pop @{$self->{$field}{$_}}
+	  for @keys;
+	return @old;
+      };
+
+    $methods{$field . "_shift"} =
+      sub {
+	my ($self, @keys) = @_;
+	my @old;
+	push @old, shift @{$self->{$field}{$_}}
+	  for @keys;
+	return @old;
+      };
+
+    $methods{$field . "_splice"} =
+      sub {
+	my ($self, $key, $offset, $length, @values) = @_;
+	splice @{$self->{$field}{$key}}, $offset, $length, @values;
+      };
+
+    $methods{$field . "_clear"} =
+      sub {
+	my ($self, @keys) = @_;
+	$self->{$field}{$_} = []
+	  for @keys;
+      };
+
+    $methods{$field . "_count"} =
+      sub {
+	my ($self, @keys) = @_;
+	my $Result = 0;
+	# Avoid autovivifying additional entries.
+	$Result +=
+	  exists $self->{$field}{$_} ? scalar @{$self->{$field}{$_}} : 0
+	  for (@keys);
+	return $Result;
+      };
+
+    $methods{"${field}_index"} =
+      sub {
+	my ($self, $key_r, @indices) = @_;
+	my (@Result, $index, $key);
+	my @keys = ref ($key_r) eq 'ARRAY' ? @$key_r : $key_r;
+	foreach $key (@keys) {
+	  my $ary = $self->{$field}{$key};
+	  foreach $index (@indices) {
+	    push @Result,
+	      ( @{$ary} > $index ) ? $ary->[$index] : undef;
+	  }
+	}
+	return wantarray ? @Result : \@Result;
+      };
+
+    $methods{"${field}_remove"} =
+      sub {
+	my ($self, $key_r, @indices) = @_;
+	my ($index, $key);
+	my @keys = ref ($key_r) eq 'ARRAY' ? @$key_r : $key_r;
+	foreach $key (@keys) {
+	  my $ary = $self->{$field}{$key};
+	  foreach $index (sort {$b<=>$a} grep $_ < @$ary, @indices) {
+	    splice (@$ary, $index, 1);
+	  }
+	}
+	return;
+      };
+
+    $methods{"${field}_sift"} =
+      sub {
+	my $self = shift;
+	my %args;
+	if ( @_ == 1 and ref $_[0] eq 'HASH' ) {
+	  %args = %{$_[0]};
+	} else {
+	  %args = @_;
+	}
+	my $filter_sr = $args{filter}  || sub { $_[0] == $_[1] };
+	my $keys_ar   = $args{keys}    || keys %{$self->{$field}};
+	my $values_ar = $args{values}  || [undef];
+# This is harder than it looks; reverse means we want to grep out only
+# if *none* of the values matches.  I guess an evaled block, or closure
+# or somesuch is called for.
+#	my $reverse   = $args{reverse} || 0;
+
+	my ($key, $i, $value);
+      KEY:
+	foreach $key (@$keys_ar) {
+	  next KEY
+	    unless exists $self->{$field}{$key};
+	INDEX:
+	  for ($i = $#{$self->{$field}{$key}}; $i >= 0; $i--) {
+	    foreach $value (@$values_ar) {
+	      if ( $filter_sr->($value, $self->{$field}{$key}[$i]) ) {
+		splice @{$self->{$field}{$key}}, $i, 1;
+		next INDEX;
+	      }
+	    }
+	  }
+	}
+      };
+  }
+
+  $class->install_methods (%methods);
 }
 
 # ----------------------------------------------------------------------
@@ -1427,9 +1829,23 @@ sub static_hash {
       sub {
 	my ($class, @list) = @_;
 	if (scalar @list == 1) {
-	  my $key = shift @list;
-	  if (ref $key) { # had better by an array ref
-	    return @hash{@$key};
+	  my ($key) = @list;
+
+	  if ( my $type = ref $key ) {
+	    if ( $type eq 'ARRAY' ) {
+	      return @hash{@$key};
+	    } elsif ( $type eq 'HASH' ) {
+	      while ( my ($subkey, $value) = each %$key ) {
+		if ( $^W ) {
+		  defined $value
+		    or carp "No value for key $subkey of hash $field.";
+		}
+		$hash{$subkey} = $value;
+	      }
+	      return wantarray ? %hash : \%hash;
+	    } else {
+	      cluck "Not a recognized ref type for static hash: $type.";
+	    }
 	  } else {
 	    return $hash{$key};
 	  }
@@ -1441,11 +1857,9 @@ sub static_hash {
 	    defined $value or carp "No value for key $key.";
 	    $hash{$key} = $value;
 	  }
-	  %hash;
+	  wantarray ? %hash : \%hash;
 	}
       };
-
-    $methods{"$ {field}s"} = $methods{$field};
 
     $methods{$field . "_keys"} =
       sub {
@@ -1471,36 +1885,6 @@ sub static_hash {
       sub {
 	my ($class, @list) = @_;
 	map { ++$hash{$_} } @list;
-      };
-
-    $methods{"add_$field"} =
-      sub {
-	my ($class, $attrib, $value) = @_;
-	$hash{$attrib} = $value;
-      };
-
-    $methods{"clear_$field"} =
-      sub {
-	my ($class, $attrib) = @_;
-	delete $hash{$attrib};
-      };
-
-    $methods{"add_$ {field}s"} =
-      sub {
-	my ($class, %attribs) = @_;
-	my ($k, $v);
-	while (($k, $v) = each %attribs) {
-	  $hash{$k} = $v;
-	}
-      };
-
-    $methods{"clear_$ {field}s"} =
-      sub {
-	my ($class, @attribs) = @_;
-	my $attrib;
-	foreach $attrib (@attribs) {
-	  delete $hash{$attrib};
-	}
       };
   }
   $class->install_methods(%methods);
@@ -1547,8 +1931,8 @@ sub code {
 
   method => [ qw / foo bar baz / ]
 
-Just like B<code>, except the code is called like a method, with $self as
-it's first argument. Basically, you're creating a method which can be
+Just like B<code>, except the code is called like a method, with $self
+as its first argument. Basically, you're creating a method which can be
 different for each object. Which is sort of weird. But perhaps useful.
 
 =cut
@@ -1637,10 +2021,6 @@ upper_case_get_set might look like this:
   }
 
   1;
-
-=head1 VERSION
-
-Class::MethodMaker v0.93
 
 =cut
 

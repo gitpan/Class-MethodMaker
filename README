@@ -106,6 +106,21 @@ SUPPORTED METHOD TYPES
     of methods for slots containing references to lists, hashes, and
     objects.
 
+  static_get_set
+
+    Like the get_set manpage,takes a single string or a reference to an
+    array of strings as its argument. For each string, x creates two
+    methods:
+
+    x   If an argument is provided, sets a new value for x. Returns (new)
+        value. Value defaults to undef.
+
+    clear_x
+        Sets value to undef. No return.
+
+    The difference between this and the get_set manpage is that these
+    scalars are shared across all instances of your object in your process.
+
   get_concat
 
     Like get_set except sets do not clear out the original value, but
@@ -295,10 +310,15 @@ SUPPORTED METHOD TYPES
     x   Called with no arguments returns the hash stored in the slot, as a
         hash in a list context or as a reference in a scalar context.
 
-        Called with one argument it treats the argument as a key and returns
-        the value stored under that key, or as a list of keys (if it is a
-        reference to a list) and returns the list of values stored under
-        those keys.
+        Called with one simple scalar argument it treats the argument as a
+        key and returns the value stored under that key.
+
+        Called with one array (list) reference argument, the array elements
+        are considered to be be keys of the hash. x returns the list of
+        values stored under those keys (also known as a *hash slice*.)
+
+        Called with one hash reference argument, the keys and values of the
+        hash are added to the hash.
 
         Called with more than one argument, treats them as a series of
         key/value pairs and adds them to the hash.
@@ -319,6 +339,96 @@ SUPPORTED METHOD TYPES
 
     x_delete
         Takes a list, deletes each key from the hash.
+
+  hash_of_lists
+
+    Creates a group of methods for dealing with list data stored by key in a
+    slot.
+
+    Takes a string or a reference to an array of strings and for each
+    string, x, creates:
+
+    x   Returns all the values for all the given keys, in order. If no keys
+        are given, returns all the values (in an unspecified key order).
+
+        The result is returned as an arrayref in scalar context. This
+        arrayref is *not* part of the data structure; messing with it will
+        not affect the contents directly (even if a single key was provided
+        as argument.)
+
+        If any argument is provided which is an arrayref, then the members
+        of that array are used as keys. Thus, the trivial empty-key case may
+        be utilized with an argument of [].
+
+    x_keys
+        Returns the keys of the hash. As an arrayref in scalar context.
+
+    x_exists
+        Takes a list of keys, and returns whether each key exists in the
+        hash (i.e., the `and' of whether the individual keys exist).
+
+    x_delete
+        Takes a list, deletes each key from the hash.
+
+    x_push
+        Takes a key, and some values. Pushes the values onto the list
+        denoted by the key. If the first argument is an arrayref, then each
+        element of that arrayref is treated as a key and the elements pushed
+        onto each appropriate list.
+
+    x_pop
+        Takes a list of keys, and pops each one. Returns the list of popped
+        elements. undef is returned in the list for each key that is has an
+        empty list.
+
+    x_unshift
+        Like push, only the from the other end of the lists.
+
+    x_shift
+        Like pop, only the from the other end of the lists.
+
+    x_splice
+        Takes a key, offset, length, and a values list. Splices the list
+        named by the key. Anything from the offset argument (inclusive) may
+        be omitted. See the splice entry in the perlfunc manpage.
+
+    x_clear
+        Takes a list of keys. Resets each named list to empty (but does not
+        delete the keys.)
+
+    x_count
+        Takes a list of keys. Returns the sum of the number of elements for
+        each named list.
+
+    x_index
+        Takes a key, and a list of indices. Returns a list of each item at
+        the corresponding index in the list of the given key. Uses undef for
+        indices beyond range.
+
+    x_remove
+        Takes a key, and a list of indices. Removes each corresponding item
+        from the named list. The indices are effectively looked up at the
+        point of call --- thus removing indices 3, 1 from list (a, b, c, d)
+        will remove (d) and (b).
+
+    x_sift
+        Takes a key, and a set of named arguments, which may be a list or a
+        hash ref. Removes list members based on a grep-like approach.
+
+        filter
+            The filter function used (as a coderef). Is passed two
+            arguments, the value compared against, and the value in the list
+            that is potential for grepping out. If returns true, the value
+            is removed. Default:
+
+              sub { $_[0] == $_[1] }
+
+        keys
+            The list keys to sift through (as an arrayref). Unknown keys are
+            ignored. Default: all the known keys.
+
+        values
+            The values to sift out (as an arrayref). Default: `[undef]'
 
   tie_hash
 
@@ -362,7 +472,7 @@ SUPPORTED METHOD TYPES
       method => [ qw / foo bar baz / ]
 
     Just like code, except the code is called like a method, with $self as
-    it's first argument. Basically, you're creating a method which can be
+    its first argument. Basically, you're creating a method which can be
     different for each object. Which is sort of weird. But perhaps useful.
 
   abstract
@@ -402,3 +512,4 @@ ADDDING NEW METHOD TYPES
       }
 
       1;
+
