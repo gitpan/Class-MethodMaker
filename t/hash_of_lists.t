@@ -7,7 +7,8 @@ use Test;
 
 use Class::MethodMaker
   hash_of_lists => [ qw / a b / ],
-  hash_of_lists => 'c';
+  hash_of_lists => 'c',
+  hash_of_lists => [qw/ -static d /];
 
 sub new { bless {}, shift; }
 my $o = new X;
@@ -155,6 +156,128 @@ TEST {
 TEST {
   $o->c_count (qw/ c b /) == 3;
 };
+
+# 21--22
+
+my $p = new X;
+$o->d_push (foo => qw/ bar baz /);
+my @a = $p->d ('foo');
+TEST {
+  @a == 2;
+};
+TEST {
+  $a[0] eq 'bar' and $a[1] eq 'baz';
+};
+
+# 23
+TEST {
+  ($p->d_index (foo => 1))[0] eq 'baz';
+};
+
+$o->d_remove ('foo' => 0);
+# 24
+TEST {
+  ($p->d_index (foo => 0))[0] eq 'baz';
+};
+
+$p->d_push ([qw/ foo bob /], qw/ arthur harry jimbob /);
+# 25--26
+TEST {
+  my @b = $o->d ('foo');
+  @b == 4 and
+    $b[0] eq 'baz' and
+    $b[1] eq 'arthur' and
+    $b[2] eq 'harry' and
+    $b[3] eq 'jimbob';
+};
+TEST {
+  my @b = $o->d ('bob');
+  @b == 3 and
+    $b[0] eq 'arthur' and
+    $b[1] eq 'harry' and
+    $b[2] eq 'jimbob';
+};
+
+$p->d_sift
+  ({
+    filter => sub { $_[0] eq $_[1] },
+    values => [qw/ arthur harry /],
+   });
+# 27--28
+TEST {
+  my @b = $o->d ('foo');
+  @b == 2 and
+    $b[0] eq 'baz' and
+    $b[1] eq 'jimbob';
+};
+TEST {
+  my @b = $o->d ('bob');
+  @b == 1 and
+    $b[0] eq 'jimbob';
+};
+
+
+my @b = $o->d_index ([qw/ foo bob /], 0, 1);
+# 29--33
+TEST {
+  @b == 4;
+};
+TEST {
+  $b[0] eq 'baz';
+};
+TEST {
+  $b[1] eq 'jimbob';
+};
+TEST {
+  $b[2] eq 'jimbob';
+};
+TEST {
+  ( ( ! $^V or $^V lt v5.6.0  or eval 'exists $b[3]' ) and
+    ! defined $b[3];
+};
+
+@b = $p->d_last (qw/ foo bob /);
+# 34--36
+TEST {
+  @b == 2;
+};
+TEST {
+  $b[0] eq 'jimbob';
+};
+TEST {
+  $b[1] eq 'jimbob';
+};
+
+@b = $p->d_last (qw/ foo bob /);
+# 37--39
+TEST {
+  @b == 2;
+};
+TEST {
+  $b[0] eq 'jimbob';
+};
+TEST {
+  $b[1] eq 'jimbob';
+};
+
+$p->d_set (foo => ( 3 => 'kirk', 4 => 'mccoy' ));
+@b = $o->d ('foo');
+# 40--43
+TEST {
+  @b == 5;
+};
+TEST {
+  $b[0] eq 'baz' and
+    $b[1] eq 'jimbob';
+};
+TEST {
+  ! defined $b[2];
+};
+TEST {
+  $b[3] eq 'kirk' and
+    $b[4] eq 'mccoy';
+};
+
 
 exit 0;
 

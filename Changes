@@ -1,5 +1,15 @@
 Revision history for Perl extension Class::MethodMaker.
 
+1.00  Add ability to call new on instances as well as classes
+        (Courtesy of Rafael Kitover).
+      Add x_set method to list, hash_of_lists.
+      Correction to -java flags for get_set (to use set_* rather than 
+        set*, etc.)
+      Install methods can now eval a string if seen.
+      List methods may all be used as x_verb now (although the 
+        pre-existing verb_x ones still exist for compatibility)
+      Added x_index to list, hash_of_lists.
+
 0.96  Fix pre-5.005_03 breakage.
       Undeprecate get_set->clear_x (keep it for consistency),
       since all other basic types have a clear_ method.

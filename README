@@ -54,7 +54,7 @@ SEE ALSO
 
 
 VERSION
-    Class::MethodMaker v0.96
+    Class::MethodMaker v1.00
 
 SUPPORTED METHOD TYPES
   new
@@ -62,30 +62,29 @@ SUPPORTED METHOD TYPES
     Creates a basic constructor.
 
     Takes a single string or a reference to an array of strings as its
-    argument. For each string creates a method of the form:
+    argument.  For each string creates a simple method that creates and
+    returns an object of the appropriate class.
 
-        sub <string> {
-          my ($class, @args) = @_;
-          my $self = {};
-          bless $self, $class;
-        }
+    This method may be called as a class method, as usual, or as in
+    instance method, in which case a new object of the same class as the
+    instance will be created.  *Note that `new_hash_init' works slightly
+    differently with regard to being called on an instance.*
 
   new_with_init
 
-    Creates a basic constructor which calls a method named init after
-    instatiating the object. The *init*() method should be defined in
-    the class using MethodMaker.
+    Creates a basic constructor which calls a method named `init' after
+    instantiating the object. The `init' method should be defined in the
+    class using MethodMaker.
 
     Takes a single string or a reference to an array of strings as its
-    argument. For each string creates a method of the form listed below.
+    argument.  For each string creates a simple method that creates an
+    object of the appropriate class, calls `init' on that object
+    propagating all arguments, before returning the object.
 
-        sub <string> {
-          my ($class, @args) = @_;
-          my $self = {};
-          bless $self, $class;
-          $self->init(@args);
-          $self;
-        }
+    This method may be called as a class method, as usual, or as in
+    instance method, in which case a new object of the same class as the
+    instance will be created.  *Note that `new_hash_init' works slightly
+    differently with regard to being called on an instance.*
 
   new_hash_init
 
@@ -107,6 +106,10 @@ SUPPORTED METHOD TYPES
     new_with_init method, say 'new' and a new_hash_init method, for
     example, 'hash_init' and then in the init method, you can call
     modify or add to the %args hash and then call hash_init.
+
+    *Note that the operation with regard to action on an instance
+    differs to that of `new' and `new_with_init' differently with regard
+    to being called on an instance.*
 
   get_set
 
@@ -140,10 +143,17 @@ SUPPORTED METHOD TYPES
     There are several options available for controlling the names and
     types of methods created.
 
+    The following options affect the type of methods created:
+
+    -static
+        The methods will refer to a class-specific, rather than
+        instance-specific store.  I.e., these scalars are shared across
+        all instances of your object in your process.
+
     The following options affect the methods created as detailed:
 
     -java
-        Creates get_x and set_x methods, which return the value, and set
+        Creates getx and setx methods, which return the value, and set
         the value (no return), respectively.
 
     -eiffel
@@ -214,6 +224,8 @@ SUPPORTED METHOD TYPES
     The difference between this and  the get_set manpage is that these
     scalars are shared across all instances of your object in your
     process.
+
+    This is now a wrapper around get_set (-static => @args).
 
   get_concat
 
@@ -295,21 +307,32 @@ SUPPORTED METHOD TYPES
     String
         The name of the instance attribute (slot).
 
-    For each method definition a get/set method is created that can
-    store an object of that class. (The get/set method, if called with a
-    reference to an object of the given class as the first argument,
-    stores it in the slot. If the slot is not filled yet it creates an
-    object by calling the given new method of the given class. Any
-    arguments passed to the get/set method are passed on to new. In all
-    cases the object now stored in the slot is returned.
+    For each slot `x', with forwarding methods `y' and `z', the
+    following methods are created:
+
+    x   A get/set method.
+
+        If supplied with an object of an appropriate type, will set set
+        the slot to that value.
+
+        Else, if the slot has no value, then an object is created by
+        calling new on the appropriate class, passing in any supplied
+        arguments.
+
+        The stored object is then returned.
+
+    y   Forwarded onto the object in slot `x', which is auto-created via
+        `new' if necessary.  The `new', if called, is called without
+        arguments.
+
+    z   As for `y'.
 
     So, using the example above, a method, `foo', is created in the
     class that calls MethodMaker, which can get and set the value of
-    those objects in hash slot {'foo'}, which will generally contain an
-    object of class Baz.  Two additional methods are created in the
-    class using MethodMaker, named 'bar' and 'baz' which result in a
-    call to the 'bar' and 'baz' methods on the Baz object stored in slot
-    foo.
+    those objects in slot foo, which will generally contain an object of
+    class Baz.  Two additional methods are created in the class using
+    MethodMaker, named 'bar' and 'baz' which result in a call to the
+    'bar' and 'baz' methods on the Baz object stored in slot foo.
 
   object_list
 
@@ -401,14 +424,22 @@ SUPPORTED METHOD TYPES
         array context it returns them as an array and in a scalar
         context as a reference to the array.
 
-    push_x
-    pop_x
-    shift_x
-    unshift_x
-    splice_x
-    clear_x
-    count_x
+    x_push
+    x_pop
+    x_shift
+    x_unshift
+    x_splice
+    x_clear
+    x_count
         Returns the number of elements in x.
+
+    x_index
+        Takes a list of indices, returns a list of the corresponding
+        values.
+
+    x_set
+        Takes a list, treated as pairs of index => value; each given
+        index is set to the corresponding value.  No return.
 
   hash
 
@@ -497,6 +528,9 @@ SUPPORTED METHOD TYPES
         popped elements.  undef is returned in the list for each key
         that is has an empty list.
 
+    x_last
+        Like `x_pop', but does not actually change any of the lists.
+
     x_unshift
         Like push, only the from the other end of the lists.
 
@@ -508,6 +542,10 @@ SUPPORTED METHOD TYPES
         list named by the key.  Anything from the offset argument
         (inclusive) may be omitted.  See the splice entry in the
         perlfunc manpage.
+
+    x_set
+        Takes a key, and a set of index->value pairs, and sets each
+        specified index to the corresponding value for the given key.
 
     x_clear
         Takes a list of keys.  Resets each named list to empty (but does
@@ -547,6 +585,12 @@ SUPPORTED METHOD TYPES
 
         values
             The values to sift out (as an arrayref).  Default: `[undef]'
+
+    Options:
+
+    -static
+        Make the corresponding storage class-specific, rather than
+        instance-specific.
 
   tie_hash
 
@@ -629,7 +673,9 @@ ADDDING NEW METHOD TYPES
     MethodMaker is a class that can be inherited. A subclass can define
     new method types by writing a method that generates a hash of
     method_name/code-reference pairs, and then calls the class method
-    `install_methods' on them.
+    `install_methods' on them.  If the coderef is in fact a string, then
+    that string will be `eval'led in the hope of getting a coderef to
+    use.
 
     For example a simple sub-class that defines a method type
     upper_case_get_set might look like this:
@@ -654,6 +700,21 @@ ADDDING NEW METHOD TYPES
       }
 
       1;
+
+    Alternatively, rather than a coderef, the values of the hash passed
+    to install_methods may be strings, which will be evaled in the hope
+    of returning a coderef to use.  If the eval fails, or anything other
+    than a coderef is returned, then C::MM croaks.
+
+    Any return value from a method (above) that is used to generate
+    methods will be passed to install_methods --- so in the above, the
+    line
+
+        $class->install_methods (%methods);
+
+    could be replaced with
+
+        return %methods
 
   EXPERIMENTAL: builtin_class
 

@@ -2,6 +2,22 @@ IN NO GIVEN ORDER, Requests & Ideas
 
 ------------------------------------
 
+Add stacks, queues, sets, other data structures.
+
+------------------------------------
+
+Add a list->slice method, that takes indexes, and returns (surprise!)  a
+slice.
+
+------------------------------------
+
+REQUEST Make list->x replace the elements of list, rather than push (use
+an argument to do this for now, later make it te default).
+
+Frank Tobin sent a patch for this.
+
+------------------------------------
+
 IDEA
 Add empty_copy method.
 Add copy_into method.

@@ -114,10 +114,15 @@ TEST {
 };
 
 #24
+$o->a ('a' => 1);
+my @l = keys %{$o->a};
 TEST {
-  $o->a ('a' => 1);
-  my @l = keys %{$o->a};
-  $l[0] eq 'a'
+  $l[0] eq 'a';
+};
+
+#25
+TEST {
+  @l == 1;
 };
 
 exit 0;

@@ -1,7 +1,7 @@
 package Class::MethodMaker;
 
 #
-# $Id: MethodMaker.pm,v 1.44 2000/06/07 06:11:45 recoil Exp $
+# $Id: MethodMaker.pm,v 1.69 2000/09/13 06:59:54 recoil Exp $
 #
 
 # Copyright (c) 2000 Martyn J. Pearce.  This program is free software;
@@ -84,12 +84,12 @@ use vars '@ISA';
 
 =head1 VERSION
 
-Class::MethodMaker v0.96
+Class::MethodMaker v1.00
 
 =cut
 
 use vars '$VERSION';
-$VERSION = "0.96";
+$VERSION = "1.00";
 
 # ----------------------------------------------------------------------
 
@@ -190,8 +190,19 @@ sub install_methods {
   while (($name, $code) = each %methods) {
     # add the method unless it's already defined (which should only
     # happen in the case of static methods, I think.)
-
-    *{"$package$name"} = $code unless defined *{"$package$name"}{CODE};
+    my $reftype = ref $code;
+    if ( $reftype eq 'CODE' ) {
+      *{"$package$name"} = $code unless defined *{"$package$name"}{CODE};
+    } elsif ( ! $reftype ) {
+      my $coderef = eval $code;
+      croak "Code:\n$code\n\ndid not compile: $@\n"
+	if $@;
+      croak "String:\n$code\n\ndid not eval to a code ref: $coderef\n"
+	unless ref $coderef eq 'CODE';
+      *{"$package$name"} = $coderef unless defined *{"$package$name"}{CODE};
+    } else {
+      croak "What do you expect me to do with this?: $code\n";
+    }
   }
 }
 
@@ -207,13 +218,14 @@ __END__
 Creates a basic constructor.
 
 Takes a single string or a reference to an array of strings as its
-argument. For each string creates a method of the form:
+argument.  For each string creates a simple method that creates and
+returns an object of the appropriate class.
 
-    sub <string> {
-      my ($class, @args) = @_;
-      my $self = {};
-      bless $self, $class;
-    }
+
+This method may be called as a class method, as usual, or as in instance
+method, in which case a new object of the same class as the instance
+will be created.  I<Note that C<new_hash_init> works slightly
+differently with regard to being called on an instance.>
 
 =cut
 
@@ -222,7 +234,8 @@ sub new {
   my %methods;
   foreach (@args) {
     $methods{$_} = sub {
-      my ($class) = @_;
+      my $class = shift;
+      $class = ref $class || $class;
       my $self = {};
       bless $self, $class;
     };
@@ -234,20 +247,19 @@ sub new {
 
 =head2 new_with_init
 
-Creates a basic constructor which calls a method named init after
-instatiating the object. The I<init>() method should be defined in the class
-using MethodMaker.
+Creates a basic constructor which calls a method named C<init> after
+instantiating the object. The C<init> method should be defined in the
+class using MethodMaker.
 
 Takes a single string or a reference to an array of strings as its
-argument. For each string creates a method of the form listed below.
+argument.  For each string creates a simple method that creates an
+object of the appropriate class, calls C<init> on that object
+propagating all arguments, before returning the object.
 
-    sub <string> {
-      my ($class, @args) = @_;
-      my $self = {};
-      bless $self, $class;
-      $self->init(@args);
-      $self;
-    }
+This method may be called as a class method, as usual, or as in instance
+method, in which case a new object of the same class as the instance
+will be created.  I<Note that C<new_hash_init> works slightly
+differently with regard to being called on an instance.>
 
 =cut
 
@@ -257,10 +269,11 @@ sub new_with_init {
   foreach (@args) {
     my $field = $_;
     $methods{$field} = sub {
-      my ($class, @args) = @_;
+      my $class = shift;
+      $class = ref $class || $class;
       my $self = {};
       bless $self, $class;
-      $self->init(@args);
+      $self->init (@_);
       $self;
     };
   }
@@ -289,6 +302,10 @@ to provide some default values.  For example, declare a new_with_init
 method, say 'new' and a new_hash_init method, for example, 'hash_init'
 and then in the init method, you can call modify or add to the %args
 hash and then call hash_init.
+
+I<Note that the operation with regard to action on an instance differs
+to that of C<new> and C<new_with_init> differently with regard to being
+called on an instance.>
 
 =cut
 
@@ -353,13 +370,25 @@ for slots containing references to lists, hashes, and objects.
 There are several options available for controlling the names and types
 of methods created.
 
+The following options affect the type of methods created:
+
+=over 4
+
+=item	-static
+
+The methods will refer to a class-specific, rather than
+instance-specific store.  I.e., these scalars are shared across all
+instances of your object in your process.
+
+=back
+
 The following options affect the methods created as detailed:
 
 =over 4
 
 =item	-java
 
-Creates get_x and set_x methods, which return the value, and set the
+Creates getx and setx methods, which return the value, and set the
 value (no return), respectively.
 
 =item	-eiffel
@@ -435,7 +464,8 @@ Creates e_clear, e_get, e_set, f_clear, f_get, f_set methods:
 =cut
 
 sub _make_get_set {
-  my ($class, $slot, $template) = @_;
+  my $class = shift;
+  my ($slot, $template, $static) = @_;
 
   my %methods;
 
@@ -448,14 +478,27 @@ sub _make_get_set {
     }
   }
 
-  my $pgsetter = sub {
-    my $self = shift;
-    if ( @_ ) {
-      $self->{$slot} = shift;
-    } else {
-      $self->{$slot};
-    }
-  };
+  my $pgsetter;
+  if ( $static ) {
+    my $store;
+    $pgsetter = sub {
+      my $self = shift;
+      if ( @_ ) {
+	$store = shift;
+      } else {
+	$store;
+      }
+    };
+  } else {
+    $pgsetter = sub {
+      my $self = shift;
+      if ( @_ ) {
+	$self->{$slot} = shift;
+      } else {
+	$self->{$slot};
+      }
+    };
+  }
 
   my @methods =
     (
@@ -476,7 +519,7 @@ sub _make_get_set {
 
 use constant GS_PATTERN_MAP =>
   {
-   java          => [ undef, undef, 'get_*', 'set_*' ],
+   java          => [ undef, undef, 'get*', 'set*' ],
    eiffel        => [ undef, undef, '*', 'set_*' ],
    compatibility => [ '*', 'clear_*', undef, undef ],
    noclear       => [ '*', undef, undef, undef ],
@@ -490,6 +533,7 @@ sub get_set {
   # @template is a list of pattern names for the methods.
   # Postions are perl:get/set, clear, get, set
   my $template = ${GS_PATTERN_MAP()}{'compatibility'};
+  my $static   = 0;
 
   my $arg;
   foreach $arg (@args) {
@@ -510,15 +554,17 @@ sub get_set {
       my $opt_name = substr ($arg, 1);
       if ( exists ${GS_PATTERN_MAP()}{$opt_name} ) {
 	$template = ${GS_PATTERN_MAP()}{$opt_name};
+      } elsif ( $opt_name eq 'static' ) {
+	$static = 1;
       } else {
 	croak "Unrecognised option: $opt_name to get_set";
       }
     } else {
-      push @methods, $class->_make_get_set ($arg, $template);
+      push @methods, $class->_make_get_set ($arg, $template, $static);
     }
   }
 
-  $class->install_methods( @methods);
+  $class->install_methods (@methods);
 }
 
 # ----------------------------------------------------------------------
@@ -546,32 +592,12 @@ No return.
 The difference between this and  L<get_set> is that these scalars are
 shared across all instances of your object in your process.
 
+This is now a wrapper around get_set (-static => @args).
+
 =cut
 
 sub static_get_set {
-  my ($class, @args) = @_;
-  my %methods;
-
-  foreach (@args) {
-    my $name = $_;
-    my $scalar;
-
-    $methods{$name} = sub {
-      my $self = shift;
-      my ($new) = @_;
-      if ( @_ ) {
-        $scalar = $_[0];
-      }
-      return $scalar;
-    };
-
-    $methods{"clear_$name"} = sub {
-      my ($self) = @_;
-      $scalar = undef;
-    };
-  }
-
-  $class->install_methods(%methods);
+  return $_[0]->get_set (-static => @_[1..$#_]);
 }
 
 
@@ -723,20 +749,40 @@ The name of the instance attribute (slot).
 
 =back
 
-For each method definition a get/set method is created that can store
-an object of that class. (The get/set method, if called with a reference
-to an object of the given class as the first argument, stores it in the
-slot. If the slot is not filled yet it creates an object by calling the
-given new method of the given class. Any arguments passed to the get/set
-method are passed on to new. In all cases the object now stored in the
-slot is returned.
+For each slot C<x>, with forwarding methods C<y> and C<z>, the following
+methods are created:
+
+=over 4
+
+=item	x
+
+A get/set method.
+
+If supplied with an object of an appropriate type, will set set the slot
+to that value.
+
+Else, if the slot has no value, then an object is created by calling new
+on the appropriate class, passing in any supplied arguments.
+
+The stored object is then returned.
+
+=item	y
+
+Forwarded onto the object in slot C<x>, which is auto-created via C<new>
+if necessary.  The C<new>, if called, is called without arguments.
+
+=item	z
+
+As for C<y>.
+
+=back
 
 So, using the example above, a method, C<foo>, is created in the class
 that calls MethodMaker, which can get and set the value of those objects
-in hash slot {'foo'}, which will generally contain an object of class
-Baz.  Two additional methods are created in the class using MethodMaker,
-named 'bar' and 'baz' which result in a call to the 'bar' and 'baz'
-methods on the Baz object stored in slot foo.
+in slot foo, which will generally contain an object of class Baz.  Two
+additional methods are created in the class using MethodMaker, named
+'bar' and 'baz' which result in a call to the 'bar' and 'baz' methods on
+the Baz object stored in slot foo.
 
 =cut
 
@@ -1337,21 +1383,30 @@ This method returns the list of values stored in the slot. In an array
 context it returns them as an array and in a scalar context as a
 reference to the array.
 
-=item   push_x
+=item   x_push
 
-=item   pop_x
+=item   x_pop
 
-=item   shift_x
+=item   x_shift
 
-=item   unshift_x
+=item   x_unshift
 
-=item   splice_x
+=item   x_splice
 
-=item   clear_x
+=item   x_clear
 
-=item   count_x
+=item   x_count
 
 Returns the number of elements in x.
+
+=item	x_index
+
+Takes a list of indices, returns a list of the corresponding values.
+
+=item	x_set
+
+Takes a list, treated as pairs of index => value; each given index is
+set to the corresponding value.  No return.
 
 =back
 
@@ -1385,46 +1440,75 @@ sub list {
         return wantarray ? @{$self->{$field}} : $self->{$field};
       };
 
+    $methods{"${field}_pop"} =
     $methods{"pop_$field"} =
       sub {
         my ($self) = @_;
         pop @{$self->{$field}}
       };
 
+    $methods{"${field}_push"} =
     $methods{"push_$field"} =
       sub {
         my ($self, @values) = @_;
-        push @{$self->{$field}}, @values;
+	push @{$self->{$field}}, @values;
       };
 
+    $methods{"${field}_shift"} =
     $methods{"shift_$field"} =
       sub {
         my ($self) = @_;
         shift @{$self->{$field}}
       };
 
+    $methods{"${field}_unshift"} =
     $methods{"unshift_$field"} =
       sub {
         my ($self, @values) = @_;
         unshift @{$self->{$field}}, @values;
       };
 
+    $methods{"${field}_splice"} =
     $methods{"splice_$field"} =
       sub {
         my ($self, $offset, $len, @list) = @_;
         splice(@{$self->{$field}}, $offset, $len, @list);
       };
 
+    $methods{"${field}_clear"} =
     $methods{"clear_$field"} =
       sub {
         my ($self) = @_;
         $self->{$field} = [];
       };
 
+    $methods{"${field}_count"} =
     $methods{"count_$field"} =
       sub {
         my ($self) = @_;
         return exists $self->{$field} ? scalar @{$self->{$field}} : 0;
+      };
+
+    $methods{"${field}_index"} =
+      sub {
+	my $self = shift;
+	my (@indices) = @_;
+	my @Result;
+	push @Result, $self->{$field}->[$_]
+	  for @indices;
+	return wantarray ? @Result : \@Result;
+      };
+
+    my $method_name = "${field}_set";
+    $methods{$method_name} =
+      sub {
+	my $self = shift;
+	my @args = @_;
+	croak "$method_name expects an even number of fields\n"
+	  if @args % 2;
+	while ( my ($index, $value) = splice @args, 0, 2 ) {
+	  $self->{$field}->[$index] = $value;
+	}
       };
 
     #
@@ -1580,7 +1664,7 @@ sub hash {
       sub {
 	my $self = shift;
 	$self->{$field} = {};
-      }
+      };
   }
   $class->install_methods(%methods);
 }
@@ -1636,6 +1720,10 @@ Takes a list of keys, and pops each one.  Returns the list of popped
 elements.  undef is returned in the list for each key that is has an
 empty list.
 
+=item	x_last
+
+Like C<x_pop>, but does not actually change any of the lists.
+
 =item   x_unshift
 
 Like push, only the from the other end of the lists.
@@ -1649,6 +1737,11 @@ Like pop, only the from the other end of the lists.
 Takes a key, offset, length, and a values list.  Splices the list named
 by the key.  Anything from the offset argument (inclusive) may be
 omitted.  See L<perlfunc/splice>.
+
+=item	x_set
+
+Takes a key, and a set of index->value pairs, and sets each specified
+index to the corresponding value for the given key.
 
 =item   x_clear
 
@@ -1701,192 +1794,256 @@ The values to sift out (as an arrayref).  Default: C<[undef]>
 
 =back
 
+Options:
+
+=over 4
+
+=item	-static
+
+Make the corresponding storage class-specific, rather than
+instance-specific.
+
+=back
+
 =cut
 
 sub hash_of_lists {
   my ($class, @args) = @_;
-  my %methods;
+  my $static = 0;
 
   foreach (@args) {
-    my $field = $_;
+    if ( substr ($_, 0, 1) eq '-' ) {
+      my $option = substr $_, 1;
+      if ( $option eq 'static' ) {
+	$static = 1;
+      } else {
+	croak "Unrecognized option to hash_of_lists: $option\n";
+      }
+    } else {
+      my %methods;
+      my $field = $_;
 
-    $methods{$field} =
-      sub {
-        my ($self, @list) = @_;
-        # defined $self->{$field} or $self->{$field} = {};
+      $methods{$field} =
+	q{sub {
+	  my $self = shift;
+	  my @list = @_;
+	  my @Result;
 
-        my @Result;
+	  if ( @list ) {
+	    if ( @list == 1 and ref ($list[0]) eq 'ARRAY' ) {
+	      @Result = map @$_, @{__STORAGE__}{@{$list[0]}};
+	    } else {
+	      my @keys =
+		map ref ($_) eq 'ARRAY' ? @$_: $_,
+		  grep exists __STORAGE__->{$_}, @list;
+	      @Result = map @$_, @{__STORAGE__}{@keys};
+	    }
+	  } else {
+	    @Result = map @$_, values %{__STORAGE__};
+	  }
 
-        if ( @list ) {
-          if ( @list == 1 and ref ($list[0]) eq 'ARRAY' ) {
-            @Result = map @$_, @{$self->{$field}}{@{$list[0]}};
-          } else {
-            my @keys =
-              map ref ($_) eq 'ARRAY' ? @$_: $_,
-                grep exists $self->{$field}{$_}, @list;
-            @Result = map @$_, @{$self->{$field}}{@keys};
-          }
-        } else {
-          @Result = map @$_, values %{$self->{$field}};
-        }
+	  return wantarray ? @Result : \@Result;
+	}};
 
-        return wantarray ? @Result : \@Result;
-      };
+      $methods{$field . "_keys"} =
+	q{sub {
+	  my ($self) = shift;
+	  my @Result = keys %{__STORAGE__};
+	  return wantarray ? @Result : \@Result;
+	}};
 
-    $methods{$field . "_keys"} =
-      sub {
-        my ($self) = shift;
-        my @Result = keys %{$self->{$field}};
-        return wantarray ? @Result : \@Result;
-      };
+      $methods{$field . "_exists"} =
+	q{sub {
+	  my ($self) = shift;
+	  my (@keys) = @_;
+	  my $found = 1;
+	  for (@keys) {
+	    $found &&= exists __STORAGE__->{$_};
+	  }
+	  return $found;
+	}};
 
-    $methods{$field . "_exists"} =
-      sub {
-        my ($self) = shift;
-        my (@keys) = @_;
-        my $found = exists $self->{$field};
-        for (@keys) {
-          $found &&= exists $self->{$field}->{$_};
-        }
-        return $found;
-      };
+      $methods{$field . "_delete"} =
+	q{sub {
+	  my ($self, @keys) = @_;
+	  delete @{__STORAGE__}{@keys};
+	}};
 
-    $methods{$field . "_delete"} =
-      sub {
-        my ($self, @keys) = @_;
-        delete @{$self->{$field}}{@keys};
-      };
+      $methods{$field . "_push"} =
+	q{sub {
+	  my ($self, $key, @values) = @_;
+	  my @keys = ref ($key) eq 'ARRAY' ? @$key : $key;
+	  for (@keys) {
+	    push @{__STORAGE__->{$_}}, @values;
+	  }
+	}};
 
-    $methods{$field . "_push"} =
-      sub {
-        my ($self, $key, @values) = @_;
-        my @keys = ref ($key) eq 'ARRAY' ? @$key : $key;
-        for (@keys) {
-          push @{$self->{$field}{$_}}, @values;
-        }
-      };
+      $methods{$field . "_unshift"} =
+	q{sub {
+	  my ($self, $key, @values) = @_;
+	  my @keys = ref ($key) eq 'ARRAY' ? @$key : $key;
+	  for (@keys) {
+	    unshift @{__STORAGE__->{$_}}, @values;
+	  }
+	}};
 
-    $methods{$field . "_unshift"} =
-      sub {
-        my ($self, $key, @values) = @_;
-        my @keys = ref ($key) eq 'ARRAY' ? @$key : $key;
-        for (@keys) {
-          unshift @{$self->{$field}{$_}}, @values;
-        }
-      };
+      $methods{$field . "_pop"} =
+	q{sub {
+	  my ($self, @keys) = @_;
+	  my @old;
+	  for (@keys) {
+	    push @old, pop @{__STORAGE__->{$_}};
+	  }
+	  return @old;
+	}};
 
-    $methods{$field . "_pop"} =
-      sub {
-        my ($self, @keys) = @_;
-        my @old;
-        for (@keys) {
-          push @old, pop @{$self->{$field}{$_}};
-        }
-        return @old;
-      };
+      $methods{$field . "_last"} =
+	q{sub {
+	  my ($self, @keys) = @_;
+	  my @old;
+	  for (@keys) {
+	    push @old, __STORAGE__->{$_}->[-1];
+	  }
+	  return @old;
+	}};
 
-    $methods{$field . "_shift"} =
-      sub {
-        my ($self, @keys) = @_;
-        my @old;
-        for (@keys) {
-          push @old, shift @{$self->{$field}{$_}};
-        }
-        return @old;
-      };
+      $methods{$field . "_shift"} =
+	q{sub {
+	  my ($self, @keys) = @_;
+	  my @old;
+	  for (@keys) {
+	    push @old, shift @{__STORAGE__->{$_}};
+	  }
+	  return @old;
+	}};
 
-    $methods{$field . "_splice"} =
-      sub {
-        my ($self, $key, $offset, $length, @values) = @_;
-        splice @{$self->{$field}{$key}}, $offset, $length, @values;
-      };
+      $methods{$field . "_splice"} =
+	q{sub {
+	  my ($self, $key, $offset, $length, @values) = @_;
+	  splice @{__STORAGE__->{$key}}, $offset, $length, @values;
+	}};
 
-    $methods{$field . "_clear"} =
-      sub {
-        my ($self, @keys) = @_;
-        for (@keys) {
-          $self->{$field}{$_} = [];
-        }
-      };
+      my $method_name = "${field}_set";
+      $methods{$method_name} =
+	q{sub{
+	    my $self = shift;
+	    croak "__METHOD_NAME__ expects a key and then index => " .
+	      "value pairs.\n"
+		unless @_ % 2;
+	    my ($key, @args) = @_;
+	    while ( my ($index, $value) = splice @args, 0, 2 ) {
+	      __STORAGE__->{$key}->[$index] = $value;
+	    }
+	    return;
+	  }};
+      $methods{$method_name} =~ s!__METHOD_NAME__!$method_name!gs;
 
-    $methods{$field . "_count"} =
-      sub {
-        my ($self, @keys) = @_;
-        my $Result = 0;
-        # Avoid autovivifying additional entries.
-        for (@keys) {
-          $Result +=
-            exists $self->{$field}{$_} ?
-              scalar @{$self->{$field}{$_}} : 0;
-        }
-        return $Result;
-      };
+      $methods{$field . "_clear"} =
+	q{sub {
+	  my ($self, @keys) = @_;
+	  for (@keys) {
+	    __STORAGE__->{$_} = [];
+	  }
+	}};
 
-    $methods{"${field}_index"} =
-      sub {
-        my ($self, $key_r, @indices) = @_;
-        my (@Result, $index, $key);
-        my @keys = ref ($key_r) eq 'ARRAY' ? @$key_r : $key_r;
-        foreach $key (@keys) {
-          my $ary = $self->{$field}{$key};
-          foreach $index (@indices) {
-            push @Result,
-              ( @{$ary} > $index ) ? $ary->[$index] : undef;
-          }
-        }
-        return wantarray ? @Result : \@Result;
-      };
+      $methods{$field . "_count"} =
+	q{sub {
+	  my ($self, @keys) = @_;
+	  my $Result = 0;
+	  # Avoid autovivifying additional entries.
+	  for (@keys) {
+	    $Result +=
+	      exists __STORAGE__->{$_} ?
+		scalar @{__STORAGE__->{$_}} : 0;
+	  }
+	  return $Result;
+	}};
 
-    $methods{"${field}_remove"} =
-      sub {
-        my ($self, $key_r, @indices) = @_;
-        my ($index, $key);
-        my @keys = ref ($key_r) eq 'ARRAY' ? @$key_r : $key_r;
-        foreach $key (@keys) {
-          my $ary = $self->{$field}{$key};
-          foreach $index (sort {$b<=>$a} grep $_ < @$ary, @indices) {
-            splice (@$ary, $index, 1);
-          }
-        }
-        return;
-      };
+      $methods{"${field}_index"} =
+	q{sub {
+	  my ($self, $key_r, @indices) = @_;
+	  my (@Result, $index, $key);
+	  my @keys = ref ($key_r) eq 'ARRAY' ? @$key_r : $key_r;
+	  foreach $key (@keys) {
+	    my $ary = __STORAGE__->{$key};
+	    foreach $index (@indices) {
+	      push @Result,
+		( @{$ary} > $index ) ? $ary->[$index] : undef;
+	    }
+	  }
+	  return wantarray ? @Result : \@Result;
+	}};
 
-    $methods{"${field}_sift"} =
-      sub {
-        my $self = shift;
-        my %args;
-        if ( @_ == 1 and ref $_[0] eq 'HASH' ) {
-          %args = %{$_[0]};
-        } else {
-          %args = @_;
-        }
-        my $filter_sr = $args{'filter'}  || sub { $_[0] == $_[1] };
-        my $keys_ar   = $args{'keys'}    || keys %{$self->{$field}};
-        my $values_ar = $args{'values'}  || [undef];
-# This is harder than it looks; reverse means we want to grep out only
-# if *none* of the values matches.  I guess an evaled block, or closure
-# or somesuch is called for.
-#       my $reverse   = $args{'reverse'} || 0;
+      $methods{"${field}_remove"} =
+	q{sub {
+	  my ($self, $key_r, @indices) = @_;
+	  my ($index, $key);
+	  my @keys = ref ($key_r) eq 'ARRAY' ? @$key_r : $key_r;
+	  foreach $key (@keys) {
+	    my $ary = __STORAGE__->{$key};
+	    foreach $index (sort {$b<=>$a} grep $_ < @$ary, @indices) {
+	      splice (@$ary, $index, 1);
+	    }
+	  }
+	  return;
+	}};
 
-        my ($key, $i, $value);
-      KEY:
-        foreach $key (@$keys_ar) {
-          next KEY
-            unless exists $self->{$field}{$key};
-        INDEX:
-          for ($i = $#{$self->{$field}{$key}}; $i >= 0; $i--) {
-            foreach $value (@$values_ar) {
-              if ( $filter_sr->($value, $self->{$field}{$key}[$i]) ) {
-                splice @{$self->{$field}{$key}}, $i, 1;
-                next INDEX;
-              }
-            }
-          }
-        }
-      };
+      $methods{"${field}_sift"} =
+	q{sub {
+	  my $self = shift;
+	  my %args;
+	  if ( @_ == 1 and ref $_[0] eq 'HASH' ) {
+	    %args = %{$_[0]};
+	  } else {
+	    %args = @_;
+	  }
+	  my $filter_sr = $args{'filter'}  || sub { $_[0] == $_[1] };
+	  my $keys_ar   = $args{'keys'}    || [ keys %{__STORAGE__} ];
+	  my $values_ar = $args{'values'}  || [undef];
+  # This is harder than it looks; reverse means we want to grep out only
+  # if *none* of the values matches.  I guess an evaled block, or closure
+  # or somesuch is called for.
+  #       my $reverse   = $args{'reverse'} || 0;
+
+	  my ($key, $i, $value);
+	KEY:
+	  foreach $key (@$keys_ar) {
+	    next KEY
+	      unless exists __STORAGE__->{$key};
+	  INDEX:
+	    for ($i = $#{__STORAGE__->{$key}}; $i >= 0; $i--) {
+	      foreach $value (@$values_ar) {
+		if ( $filter_sr->($value, __STORAGE__->{$key}[$i]) ) {
+		  splice @{__STORAGE__->{$key}}, $i, 1;
+		  next INDEX;
+		}
+	      }
+	    }
+	  }
+	}};
+
+      my $replace = $static ? '$store' : "\$self->{$field}";
+      foreach (@methods{keys %methods}) {
+	s!__STORAGE__!$replace!gm
+	  unless ref $_;
+	;
+      }
+
+      if ( $static ) {
+	my $store;
+	for (@methods{keys %methods}) {
+	  $code = eval $_;
+	  croak "Compilation of \n$_\n failed: $@\n"
+	    if $@;
+	  croak "Compilation of \n$_\n did not return a coderef: $code\n"
+	    unless ref $code eq 'CODE';
+	  $_ = $code;
+	}
+      }
+
+      $class->install_methods (%methods);
+    }
   }
-
-  $class->install_methods (%methods);
 }
 
 # ----------------------------------------------------------------------
@@ -2275,7 +2432,8 @@ sub copy {
 MethodMaker is a class that can be inherited. A subclass can define new
 method types by writing a method that generates a hash of
 method_name/code-reference pairs, and then calls the class method
-C<install_methods> on them.
+C<install_methods> on them.  If the coderef is in fact a string, then
+that string will be C<eval>led in the hope of getting a coderef to use.
 
 For example a simple sub-class that defines a method type
 upper_case_get_set might look like this:
@@ -2300,6 +2458,20 @@ upper_case_get_set might look like this:
   }
 
   1;
+
+Alternatively, rather than a coderef, the values of the hash passed to
+install_methods may be strings, which will be evaled in the hope of
+returning a coderef to use.  If the eval fails, or anything other than a
+coderef is returned, then C::MM croaks.
+
+Any return value from a method (above) that is used to generate methods
+will be passed to install_methods --- so in the above, the line
+
+    $class->install_methods (%methods);
+
+could be replaced with
+
+    return %methods
 
 =cut
 

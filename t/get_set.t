@@ -9,7 +9,7 @@ use Class::MethodMaker
 	      [ undef, undef, 'get_*', 'set_*' ] => qw/ d e /,
 	      -noclear       => 'f',
 	      -eiffel        => 'g',
-	      -java          => 'h',
+	      -java          => 'H',
 	      -compatibility => 'i',
 	     ];
 
@@ -46,7 +46,7 @@ TEST { $o->can ('f') and ! $o->can ('clear_f') and
 TEST { $o->can ('g') and ! $o->can ('clear_g') and
 	 $o->can ('set_g') and ! $o->can ('get_g') };
 TEST { ! $o->can ('h') and ! $o->can ('clear_h') and
-	 $o->can ('set_h') and $o->can ('get_h') };
+	 $o->can ('setH') and $o->can ('getH') };
 TEST { $o->can ('i') and $o->can ('clear_i') and
 	 ! $o->can ('set_i') and ! $o->can ('get_i') };
 
