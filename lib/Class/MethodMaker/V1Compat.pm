@@ -279,7 +279,7 @@ our @EXPORT_OK = qw( V1COMPAT );
 # Utility -----------------------------
 
 use Carp qw( );
-use Class::MethodMaker::Constants qw( INTEGER );
+use Class::MethodMaker::Constants qw( );
 
 # ----------------------------------------------------------------------------
 
@@ -1048,8 +1048,8 @@ Martyn J. Pearce
 
 =head1 COPYRIGHT
 
-Copyright (c) 2003 Martyn J. Pearce.  This program is free software; you can
-redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2003, 2004 Martyn J. Pearce.  This program is free software; you
+can redistribute it and/or modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 

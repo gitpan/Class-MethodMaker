@@ -1,5 +1,8 @@
 Revision History for Class::MethodMaker (versions 2)
 
+2.02	Apr  9 11:02 AM GMT 2004
+	- Fix redefine warnings (with V1Compat) under perl-5.8.3
+
 2.01	Apr  3 12:22 PM GMT 2004
 	- Fix obscure handling of -hash_init with v1 hash 
 	- Fix hash in v1 mode to return reference to the actual storage

@@ -14,7 +14,7 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 12a91d7952ce922d7162dc3bf23cf2dd9148b537 Changes
+SHA1 a49c43d31993d04109aa60ae328248dbf41b61f2 Changes
 SHA1 efa8cb615886410be8de15f5a6925697f624d278 INSTALL
 SHA1 ca30a7dbf1e081b5cadc648e12aa9f18a53999da MANIFEST
 SHA1 d0164da806f2157381c3614662b6afa8bc04a762 MANIFEST.SKIP
@@ -33,9 +33,9 @@ SHA1 d39160a9f9faf6a3036888015958afd5e6360dab examples/simple1
 SHA1 da39a3ee5e6b4b0d3255bfef95601890afd80709 lib/Class/.placeholder
 SHA1 34fa858b735fb30cea6ffcf17c008f6792cd6ff8 lib/Class/MethodMaker.pm
 SHA1 e9cb30df1d39b6bf81a3eae841bba358220ae5b6 lib/Class/MethodMaker/Constants.pm
-SHA1 1e532fe446faa80118775384be80e314c6e0b42d lib/Class/MethodMaker/Engine.pm
+SHA1 f5a85309b54b504f67c5617358cabdacb9bfb8b6 lib/Class/MethodMaker/Engine.pm
 SHA1 ae8200b36fec609638f4bb96cc520efca4c8a861 lib/Class/MethodMaker/OptExt.pm
-SHA1 39c250fa45a94a844a2a2109805d61305069492a lib/Class/MethodMaker/V1Compat.pm
+SHA1 82016e962b7fb00b19c192d39d72a3d1054e9451 lib/Class/MethodMaker/V1Compat.pm
 SHA1 aefdc0ff1ed174960178107a624fbde5caeb9c0e make-pm
 SHA1 e7569e5eeef2a8558e6d4828be087a6e1a841295 t/0-signature.t
 SHA1 9fabeadac272a26f451e137edb6dd97655e91ce8 t/array.t
@@ -43,7 +43,7 @@ SHA1 305049a080aee52255793b7d1d49185db456b5af t/basic.t
 SHA1 36f35089b3cdd95f16dcbe5f42c43e31182cbb88 t/diffclass.t
 SHA1 596533b56fe526b886a49cde6caa546c864cf48f t/hash.t
 SHA1 c1c5c7bc50fd8c72d33ecd3470a2217edd0241ab t/new.t
-SHA1 93a4a7b131af0dfa98ddad2a8f10eb376f9483e1 t/redefine-warnings.t
+SHA1 91e1bca16495461ea447c44f17f3d19b756e946a t/redefine-warnings.t
 SHA1 fe8e3e07688d65bdbc79cbf836dd6bb21574c4d9 t/scalar.t
 SHA1 15982417c01cf68495c17068f799a24c89168ef5 t/test.pm
 SHA1 732e5dd8fbc6e826bbc55f7366e74715fe8f8a47 t/test_v1.pm
@@ -78,7 +78,7 @@ SHA1 8289bad1b77581edb67b482f435dd2b6bd07e0e8 t/v1_tie_scalar.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.2 (Darwin)
 
-iD8DBQFAb/+WV6eZRcV4WK0RAmCgAJ91wdwtOAgzeDNMw4fuAMeEaINARgCgwYIw
-5nM1K5v/U0PhPBI/FLc2weY=
-=11vl
+iD8DBQFAdnZbV6eZRcV4WK0RAkffAJ9Kq5Wj0FutQnp0dqh9jRLqIYGd5QCbBSAx
+T5B2sonTaecyH581/yMB9m8=
+=thIN
 -----END PGP SIGNATURE-----

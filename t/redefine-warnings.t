@@ -50,8 +50,8 @@ displays this issue with 2.00, that wouldd be great.
     require IPC::Run;
   };
   my $run_failed = $@;
-  $run_failed =~ s/\(.*$//
-    unless $ENV{TEST_DEBUG} > 1;
+  defined $run_failed && $run_failed =~ s/\(.*$//
+    unless defined $ENV{TEST_DEBUG} and $ENV{TEST_DEBUG} > 1;
   eval {
     require Class::MethodMaker;
   };
