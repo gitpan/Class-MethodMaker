@@ -1,12 +1,12 @@
 package Class::MethodMaker;
 
 #
-# $Id: MethodMaker.pm,v 1.69 2000/09/13 06:59:54 recoil Exp $
+# $Id: MethodMaker.pm,v 1.72 2001/01/11 17:48:21 recoil Exp $
 #
 
-# Copyright (c) 2000 Martyn J. Pearce.  This program is free software;
-# you can redistribute it and/or modify it under the same terms as Perl
-# itself.
+# Copyright (c) 2001, 2000 Martyn J. Pearce.  This program is free
+# software; you can redistribute it and/or modify it under the same
+# terms as Perl itself.
 
 # Copyright 1998, 1999, 2000 Evolution Online Systems, Inc.  You may use
 # this software for free under the terms of the MIT License.  More info
@@ -84,12 +84,12 @@ use vars '@ISA';
 
 =head1 VERSION
 
-Class::MethodMaker v1.00
+Class::MethodMaker v1.02
 
 =cut
 
 use vars '$VERSION';
-$VERSION = "1.00";
+$VERSION = "1.02";
 
 # ----------------------------------------------------------------------
 
@@ -940,11 +940,40 @@ sub object_list {
       #
       # Deprecated in line with list, v0.95 (1.vi.00)
       #
-      $methods{"${name}_ref"} = sub {
+      $methods{"ref_$name"} = sub {
         my ($self) = @_;
         $self->{$name};
       };
-
+      
+      $methods{"index_$name"} = sub {
+        my $self = shift;
+        my (@indices) = @_;
+        my @Result;
+        push @Result, $self->{$name}->[$_]
+          for @indices;
+        return $Result[0] if @_ == 1;
+        return wantarray ? @Result : \@Result;
+      };
+      
+      foreach (keys %methods) {
+        /^(.*)_([^_]*)$/ or next;
+        my ($verb, $name) = ($1, $2);
+        $methods{"${name}_$verb"} = $methods{$_};
+      }
+      
+      for my $method_name (("set_$name", "${name}_set")) {
+        $methods{$method_name} = sub {
+          my $self = shift;
+          my @args = @_;
+          croak "$method_name expects an even number of fields\n"
+              if @args % 2;
+          while ( my ($index, $value) = splice @args, 0, 2 ) {
+            $self->{$name}->[$index] = $value;
+          }
+          return @_ / 2;
+        };
+      }
+        
       my $meth;
       foreach $meth (@composites) {
         $methods{$meth} = sub {

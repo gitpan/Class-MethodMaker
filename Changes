@@ -1,5 +1,8 @@
 Revision history for Perl extension Class::MethodMaker.
 
+1.02  Add corrections to make object_list act just like list
+	(Courtesy of Piers Cawley)
+
 1.00  Add ability to call new on instances as well as classes
         (Courtesy of Rafael Kitover).
       Add x_set method to list, hash_of_lists.
