@@ -1,5 +1,12 @@
 Revision history for Perl extension Class::MethodMaker.
 
-0.01  Fri Nov 22 13:06:50 1996
-	- original version; created by h2xs 1.1.1.10
+0.92  Added regression tests, originally written to exercise 0.91 and
+      then moved to a restructured MethodMaker.pm. One meta-method,
+      fields() was abandoned, and replaced with a different meta_method,
+      grouped_fields(), which adheres to the new calling structure.
+
+0.91  Bundled up in a proper package, released to CPAN 26 November 1996
+
+0.90  First stab -- released to CPAN without proper Makefile.PL or
+      anything.
 
