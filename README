@@ -1,4 +1,4 @@
-Module Class-MethodMaker (1.11):
+Module Class-MethodMaker (1.12):
 
 Description:
 
@@ -31,4 +31,4 @@ Copyright:
     can redistribute it and/or modify it under the same terms as Perl
     itself.
 
-13th August, 2003
+13th September, 2003

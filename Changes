@@ -1,5 +1,12 @@
 Revision history for Class-MethodMaker.
 
+1.12  Sat Sep 13 10:27AM GMT
+	- Add INSTALL file
+	- Add -set_once options to get_set.  Note that these options are 
+	  experimental and will not be available in initial V2 (but V1 will
+	  continue to be maintained).
+          Patch contributed by John Millaway <John_Millaway@ghrsystems.com>.
+
 1.11  Tue Aug 12 5:43PM GMT
 	- Integrate new build system supporting ExtUtils::MakeMaker with simple
 	  Makefile.PL, ExtUtils::MakeMaker with configure, and Module::Build.

@@ -10,4 +10,5 @@
 ^Proposal.pod$
 ^*~$
 ^INFO.yaml$
-^make.pm$
+^make[-.]pm$
+^_build/

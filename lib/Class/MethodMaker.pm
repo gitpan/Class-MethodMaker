@@ -53,16 +53,16 @@ use strict;
 
 # Inheritance -------------------------
 
-use AutoLoader;
-use vars qw( @ISA );
-@ISA = qw ( AutoLoader );
+use AutoLoader 'AUTOLOAD';
+#use vars qw( @ISA );
+#@ISA = qw ( AutoLoader );
 
 # Utility -----------------------------
 
 use Carp qw( carp cluck croak );
 
 use vars qw( $VERSION $PACKAGE );
-$VERSION = '1.11';
+$VERSION = '1.12';
 $PACKAGE = 'Class-MethodMaker';
 
 # ----------------------------------------------------------------------
@@ -516,6 +516,49 @@ The methods will refer to a class-specific, rather than
 instance-specific store.  I.e., these scalars are shared across all
 instances of your object in your process.
 
+=item   -set_once
+
+=item   -set_once_or_SUBNAME
+
+=item   -set_once_or_ignore
+
+Please note that the -set_once options are EXPERIMENTAL, as noted above.  In
+particular, they will not be available in initial versions of V2.  V1 will
+continue to be maintained after V2 is released, but you will not be able to
+upgrade to V2 initially if you use these options.
+
+The methods will allow the value to be set only once.  If a caller attempts to
+set the value a second time, then SUBNAME will be called (default is to die). The subroutine
+SUBNAME will be called as SUBNAME( $CLASS, $ERRMSG, @ARGS ), where $CLASS is
+the first parameter passed to the set method, $ERRMSG is a human-readable
+message, and @ARGS are the remaining parameters passed to the set method.
+
+If SUBNAME is croak, carp, cluck, or confess, then the Carp module is automatically used.
+
+-set_once is shorthand for -set_once_or_die.
+
+-set_once_or_ignore  means that any subsequent attempts to set the value will be silently ignored.
+
+Example:
+
+  package Person;
+  use Class::MethodMaker
+      new => 'new',
+      get_set => [qw/ -set_once  Name /],
+      get_set => [qw/ -set_once_or_report  Address /],
+      get_set => [qw/ -set_once_or_ignore  ID /];
+
+  package main;
+
+  my $p = new Person;
+  $p->Name('John');
+  $p->Address('Philadelphia');
+  $p->ID(43);
+
+  $p->Name('Martyn');    # die! Attempt to set Person::Name twice.
+  $p->Address('Surrey'); # Calls $p->report("Error...", 'Surrey')
+  $p->ID(44);            # returns 43.
+  
 =back
 
 The following options affect the methods created as detailed:
@@ -643,7 +686,11 @@ C<setStatus> methods), and the C<size> & C<name> components as eiffel style
 
 sub _make_get_set {
   my $class = shift;
-  my ($slot, $template, $static) = @_;
+  my ($slot, $template, $opts) = @_; # $opts is a hashref
+
+  # Older subclasses might pass a boolean instead of an href,
+  # expecting to set the "-static" option.
+  $opts = +{ '-static' => ($opts ? 1 : 0) } unless ref($opts) eq 'HASH';
 
   my %methods;
 
@@ -657,7 +704,7 @@ sub _make_get_set {
   }
 
   my $pgsetter;
-  if ( $static ) {
+  if ( $opts->{'-static'} ) {
     my $store;
     $pgsetter = sub {
       return $store if @_ == 1;
@@ -668,6 +715,45 @@ sub _make_get_set {
       return $_[0]->{$slot} if @_ == 1;
       return $_[0]->{$slot} = $_[1];
     };
+  }
+
+  # -set_once  wrapper
+  if ( defined ( my $action_sub = $opts->{'-set_once'}) ) {
+      my $once_name = " __CMM__ $slot once ";
+      my $inner_pgsetter = $pgsetter;
+
+      if ( $opts->{'-static'}) {
+          my $already_set;
+          $pgsetter = sub {
+              if ( @_ > 1 ) {
+                if ( $already_set ){
+                    my $class = ref($_[0]) || $_[0];
+                    $action_sub->($_[0], "Attempt to set static $class\:\:$slot more than once.", @_[1..$#_]);
+                    return $inner_pgsetter->($_[0]);
+                }
+                else{
+                    $already_set = 1;
+                }
+              }
+              # call the old pgsetter
+              $inner_pgsetter->(@_);
+            };
+      }
+      else {
+          $pgsetter = sub {
+              if ( @_ > 1 ) {
+                if ( exists $_[0]->{$once_name} ){
+                    my $class = ref($_[0]) || $_[0];
+                    $action_sub->($_[0], "Attempt to set $class\:\:$slot more than once.",@_[1..$#_]);
+                    return $inner_pgsetter->($_[0]);
+                }else{
+                    $_[0]->{$once_name} = 1;
+                }
+              }
+              # call the old pgsetter
+              $inner_pgsetter->(@_);
+            };
+      }
   }
 
   my @methods =
@@ -698,6 +784,9 @@ use constant GS_PATTERN_MAP =>
   };
 use constant GS_PATTERN_SPEC => join '|', keys %{GS_PATTERN_MAP()};
 
+# Regex for -set_once. The action, if any, is in $1
+use constant CMM_SET_ONCE_OPTION => qr/^-(?:set_once(?:_or_(\w+))?)/x;
+
 sub get_set {
   my ($class, @args) = @_;
   my @methods;
@@ -705,7 +794,7 @@ sub get_set {
   # @template is a list of pattern names for the methods.
   # Postions are perl:get/set, clear, get, set
   my $template = ${GS_PATTERN_MAP()}{'compatibility'};
-  my $static   = 0;
+  my %opts = ( '-static' => 0 );
 
   my $arg;
   foreach $arg (@args) {
@@ -726,17 +815,43 @@ sub get_set {
       my $opt_name = substr ($arg, 1);
       if ( exists ${GS_PATTERN_MAP()}{$opt_name} ) {
 	$template = ${GS_PATTERN_MAP()}{$opt_name};
-      } elsif ( $opt_name eq 'static' ) {
-	$static = 1;
-      } else {
-	croak "Unrecognised option: $opt_name to get_set";
+      }
+      elsif ( $opt_name eq 'static' ){
+	$opts{ $arg } = 1;
+      }
+      elsif ( $arg =~ CMM_SET_ONCE_OPTION ){
+         $class->_process_set_once($arg, \%opts);
+      }
+      else {
+	croak "Unrecognised option: $arg to get_set";
       }
     } else {
-      push @methods, $class->_make_get_set ($arg, $template, $static);
+      push @methods, $class->_make_get_set ($arg, $template, \%opts);
     }
   }
 
   $class->install_methods (@methods);
+}
+
+# Process option '-set_once' or '-set_once_or_FOO'.
+# Return: none, but \%opts is modified.
+sub _process_set_once {
+    my ($class, $option, $opts) = @_;
+
+    return unless $option =~ CMM_SET_ONCE_OPTION;
+    my $action_name = $1 || 'die';
+    my $use = '';
+
+    if ($action_name eq 'ignore') {
+        $opts->{'-set_once'} = sub { };
+    }
+    elsif ($action_name =~ /(carp|cluck|croak|confess)|die|warn/){
+        $use = defined($1) && length($1) ? "use Carp qw($action_name);" : '';
+        $opts->{'-set_once'} = eval "sub { $use $action_name(\@_) }";
+    }else {
+        $opts->{'-set_once'} = eval "sub { \$_[0]->$action_name(\@_[1..\$#_]) }";
+    }
+    return;
 }
 
 # ----------------------------------------------------------------------
@@ -2590,7 +2705,7 @@ sub hash_of_lists {
       if ( $static ) {
 	my $store;
 	for (@methods{keys %methods}) {
-	  $code = eval $_;
+	  my $code = eval $_;
 	  croak "Compilation of \n$_\n failed: $@\n"
 	    if $@;
 	  croak "Compilation of \n$_\n did not return a coderef: $code\n"

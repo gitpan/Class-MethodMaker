@@ -1,7 +1,7 @@
 package Test;
 
 #
-# $Id: Test.pm,v 1.1 2002/01/30 14:15:02 martyn Exp $
+# $Id: Test.pm,v 1.2 2003/08/31 17:34:54 mx Exp $
 #
 
 # COPYRIGHT NOTICE
@@ -41,7 +41,7 @@ sub COUNT_TESTS {
   open(IN, $file) or die "Can't open $file: $!";
   while (<IN>) {
     /^\s*#/ and next;
-    $c += s/(TEST\s{)/$1/g;
+    $c += s/(TEST\s+{)/$1/g;
   }
   $c;
 }

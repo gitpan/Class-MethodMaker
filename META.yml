@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Class-MethodMaker
-version: 1.11
+version: 1.12
 license: perl
 distribution_type: module
 requires: {}
@@ -10,20 +10,20 @@ conflicts: {}
 provides:
   Class::MethodMaker:
     file: lib/Class/MethodMaker.pm
-    version: 1.11
+    version: 1.12
   Class::MethodMakerSubclass:
     file: lib/Class/MethodMaker.pm
-    version: 1.11
+    version: 1.12
   Person:
     file: lib/Class/MethodMaker.pm
-    version: 1.11
+    version: 1.12
   Simple:
     file: lib/Class/MethodMaker.pm
-    version: 1.11
+    version: 1.12
   Stat:
     file: lib/Class/MethodMaker.pm
-    version: 1.11
+    version: 1.12
   main:
     file: lib/Class/MethodMaker.pm
-    version: 1.11
+    version: 1.12
 generated_by: Module::Build version 0.19

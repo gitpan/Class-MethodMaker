@@ -453,7 +453,6 @@ my %Config =
    VERSION_FROM => VERSION_FROM,
    AUTHOR       => AUTHOR,
    ABSTRACT     => ABSTRACT,
-   PREFIX       => PREFIX,
    PREREQ_PM    => { map (($_->{name} => $_->{version} || 0 ),
                           grep ! $_->{optional}, @{MOD_REQS()})},
    PM           => \%pm,
@@ -462,7 +461,15 @@ my %Config =
    PL_FILES     => +{},
    EXE_FILES    => [ grep !/(?:CVS|~)$/, glob catfile (qw( bin * )) ],
    clean        => +{ FILES => [qw( Build _build )] },
+   realclean    => +{ FILES => [qw( Build.PL META.yml
+                                    Makefile.PL
+                                    README INSTALL
+                                    SIGNATURE
+                                    configure make-pm )] },
   );
+
+$Config{PREFIX} = *PREFIX{CODE}->()
+  if defined *PREFIX{CODE};
 
 if ( defined *DEPENDS{CODE} ) {
   my $depends = *DEPENDS{CODE}->();
@@ -483,13 +490,13 @@ if ( defined *DERIVED_PM{CODE} ) {
     unless UNIVERSAL::isa($extra, 'ARRAY');
 
   for (@$extra) {
-    $Config{PM}->{$_} = catfile '$(INST_LIBDIR)', $_;
+    $Config{PM}->{catfile('lib', $_)} = catfile '$(INST_LIBDIR)', $_;
     push @{$Config{clean}->{FILES}}, $_;
   }
 }
 
-$Config{clean}->{FILES} = join ' ', @{$Config{clean}->{FILES}}
-  if exists $Config{clean};
+$Config{clean}->{FILES}     = join ' ', @{$Config{clean}->{FILES}};
+$Config{realclean}->{FILES} = join ' ', @{$Config{realclean}->{FILES}};
 
 WriteMakefile (%Config);
 

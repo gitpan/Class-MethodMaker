@@ -52,7 +52,7 @@ TEST {
 
 # 10--12
 TEST { ref $o->b_ref eq 'ARRAY' };
-TEST { ! scalar @{$o->b_clear} };
+TEST { ! scalar $o->b_clear };
 TEST { ! scalar @{$o->b} };
 
 $o->b_unshift(qw/ a b c /);

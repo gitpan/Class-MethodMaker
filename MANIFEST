@@ -18,6 +18,8 @@ t/method.t
 t/new.t
 t/object.t
 t/object_list.t
+t/set_once.t
+t/set_once_static.t
 t/static_get_set.t
 t/static_hash.t
 t/struct.t
@@ -43,3 +45,4 @@ t/new_hash_with_init.t
 t/singleton.t
 SIGNATURE
 t/0-signature.t
+INSTALL
