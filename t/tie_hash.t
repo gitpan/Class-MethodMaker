@@ -62,8 +62,6 @@ TEST {
   $l[3] eq 'd'
 };
 
-TEST { $o->as eq $o->a };
-
 TEST { $o->b_tally(qw / a b c a b a d / ); };
 TEST {
   my %h = $o->b;

@@ -1,8 +1,8 @@
-MethodMaker.pm
 t/Test.pm
 t/abstract.t
 t/boolean.t
 t/code.t
+t/counter.t
 t/find_test
 t/get_concat.t
 t/get_set.t
@@ -22,6 +22,8 @@ t/static_hash.t
 t/struct.t
 t/tie_hash.t
 Changes
-MANIFEST
-README
 Makefile.PL
+TODO
+MethodMaker.pm
+README
+MANIFEST

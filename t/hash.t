@@ -106,5 +106,19 @@ TEST {
   $l[5] eq 'y'
 };
 
+#23
+TEST {
+  $o->a_clear;
+  my @a_keys = $o->a_keys;
+  @a == 0;
+};
+
+#24
+TEST {
+  $o->a (a => 1);
+  my @l = keys %{$o->a};
+  $l[0] eq 'a'
+};
+
 exit 0;
 

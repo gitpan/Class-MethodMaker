@@ -1,5 +1,16 @@
 Revision history for Perl extension Class::MethodMaker.
 
+0.95  Fix bug in boolean that failed in inherited classes.
+      Make get_set (undef) work.  Deprecate clear_x.
+      -sugar reintroduced for backward compatibility only.
+      Many more options to get_set.
+      Added counter method.
+      Made 5.004_04 compatible (I hope).
+      Added hash x_clear method.
+      Documented builtin class.
+      Documented join addition to get_concat.
+      Released 1.vi.00
+
 0.94  Added static_get_set, and hashref arg handling to hash & 
       static_hash; all courtesy of Matthew Persico.  Slight cleaning.
       Added more ideas to `TODO' list.

@@ -88,8 +88,9 @@ TEST {
 TEST {
   my @k = $o->c_keys;
   my $ok = (@k == @keys);
-  $ok &&= ( $k[$_] eq $keys[$_] )
-    for 0..$#k;
+  for (0..$#k) {
+    $ok &&= ( $k[$_] eq $keys[$_] );
+  }
   $ok;
 };
 TEST {
@@ -98,8 +99,9 @@ TEST {
 TEST {
   @a = $o->c_pop (@keys);
   my $ok = (@a == @keys);
-  $ok &&= $_ eq 'f'
-    for @a;
+  for (@a) {
+    $ok &&= $_ eq 'f';
+  }
   $ok;
 };
 TEST {
@@ -120,8 +122,9 @@ TEST {
   my @a = $o->c (qw/ c b /);
   my @expect = qw/ e e d e /;
   my $ok = @a == @expect;
-  $ok &&= $a[$_] eq $expect[$_]
-    for 0..$#a;
+  for (0..$#a) {
+    $ok &&= $a[$_] eq $expect[$_];
+  }
   return $ok;
 };
 
@@ -131,8 +134,9 @@ TEST {
   my @a = $o->c (qw/ c b /);
   my @expect = qw/ e d e /;
   my $ok = @a == @expect;
-  $ok &&= $a[$_] eq $expect[$_]
-    for 0..$#a;
+  for (0..$#a) {
+    $ok &&= $a[$_] eq $expect[$_];
+  }
   return $ok;
 };
 
@@ -143,8 +147,9 @@ TEST {
   my @a = $o->c (qw/ c b /);
   my @expect = qw/ e e e /;
   my $ok = @a == @expect;
-  $ok &&= $a[$_] eq $expect[$_]
-    for 0..$#a;
+  for (0..$#a) {
+    $ok &&= $a[$_] eq $expect[$_];
+  }
   return $ok;
 };
 TEST {
