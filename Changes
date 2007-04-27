@@ -1,5 +1,8 @@
 Revision History for Class::MethodMaker (versions 2)
 
+2.10	Apr 27 09:24:30 CEST 2007
+	- Fixed SIGNATURE
+
 2.09	Dec  5  0:31AM GMT 2006
 	- Fixed compile problems with 5.9.4 upwards (rt.cpan.org #22413)
 
