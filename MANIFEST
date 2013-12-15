@@ -23,7 +23,6 @@ MANIFEST.SKIP
 META.yml
 MethodMaker.xs
 README
-SIGNATURE
 t/array.t
 t/basic.t
 t/diffclass.t
@@ -63,3 +62,4 @@ t/v1_tie_list.t
 t/v1_tie_scalar.t
 t/warnings.t
 TODO
+META.json                                Module JSON meta-data (added by MakeMaker)

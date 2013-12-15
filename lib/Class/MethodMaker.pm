@@ -6,7 +6,7 @@ use Class::MethodMaker::Constants qw( );
 use Class::MethodMaker::Engine    qw();
 
 # Make this line self-contained so MakeMaker can eval() it.
-our $VERSION = '2.18';
+our $VERSION = '2.19';
 our $PACKAGE = 'Class-MethodMaker';
 
 use XSLoader qw();
@@ -460,7 +460,7 @@ default-determined class, as outlined above.
 
 Setting the target class in this way does B<not> persist over multiple calls
 to C<use>/C<import>.  A subsequent call to either will use the
-default-determined class as target (unless again overriden by
+default-determined class as target (unless again overridden by
 C<-target_class>).
 
 =back
@@ -516,7 +516,7 @@ are "forwarded on" to the given component.  For example,
                ],
     ])},
 
-any call of C<mode> or C<size> on an instance of C<X> wil simply call the
+any call of C<mode> or C<size> on an instance of C<X> will simply call the
 method of the same name on the value stored in the component C<st1>, with the
 same arguments, and returns the value(s) of this call.
 

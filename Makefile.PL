@@ -47,7 +47,7 @@ $pm{catfile qw( lib Class ), $_} = catfile '$(INST_LIBDIR)', $_
 my %MakefileArgs = (
   NAME         => 'Class::MethodMaker',
   DISTNAME     => 'Class-MethodMaker',
-  VERSION      => '2.18',
+  VERSION      => '2.19',
   AUTHOR       => 'Martyn J. Pearce',
   LICENSE      => 'perl',
   ABSTRACT     => 'a module for creating generic methods',
@@ -83,7 +83,7 @@ WriteMakefile1(
   MIN_PERL_VERSION => '5.006',
   META_MERGE => {
     resources => {
-      repository => 'http://github.com/renormalist/class-methodmaker',
+      repository => 'git://github.com/renormalist/class-methodmaker.git',
     },
   },
   #BUILD_REQUIRES => {
