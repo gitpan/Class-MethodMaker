@@ -21,4 +21,4 @@ requires:
   perl: 5.006
 resources:
   repository: git://github.com/renormalist/class-methodmaker.git
-version: 2.19
+version: 2.20
